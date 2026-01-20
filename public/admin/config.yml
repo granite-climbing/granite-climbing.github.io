@@ -6,9 +6,8 @@ backend:
   name: github
   repo: granite-climbing/granite-climbing.github.io
   branch: main
-  # Netlify OAuth 프록시 사용 (Netlify 사이트 생성 후 URL 입력)
+  # Netlify OAuth 프록시 사용
   base_url: https://granite-climing.netlify.app
-  auth_endpoint: /api/v1/oauth/callback
 
 media_folder: public/images
 public_folder: /images
