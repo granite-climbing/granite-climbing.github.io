@@ -4,10 +4,10 @@ local_backend: false
 
 backend:
   name: github
-  repo: granite-climbing/granite-climbing.github.io
+  repo: granite-climbing/granite
   branch: main
-  # Netlify OAuth 프록시 사용
   base_url: https://granite-climing.netlify.app
+  auth_scope: repo
 
 media_folder: public/images
 public_folder: /images
