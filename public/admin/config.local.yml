@@ -3,10 +3,8 @@ local_backend: true
 
 backend:
   name: github
-  repo: YOUR_USERNAME/granite
+  repo: granite-climbing/granite-climbing.github.io
   branch: main
-  base_url: https://YOUR_USERNAME.github.io
-  auth_endpoint: /granite/api/auth
 
 media_folder: public/images
 public_folder: /images

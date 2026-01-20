@@ -1,9 +1,11 @@
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-
 export function getAssetPath(path: string): string {
-  // 이미 basePath가 포함되어 있거나 외부 URL인 경우 그대로 반환
-  if (path.startsWith('http') || (basePath && path.startsWith(basePath))) {
+  // 외부 URL인 경우 그대로 반환
+  if (path.startsWith('http')) {
     return path;
   }
-  return `${basePath}${path}`;
+  // 절대 경로가 아닌 경우 '/'를 붙여서 반환
+  if (!path.startsWith('/')) {
+    return `/${path}`;
+  }
+  return path;
 }

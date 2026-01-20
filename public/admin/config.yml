@@ -1,12 +1,14 @@
 # 로컬 개발용 설정 (decap-server 필요)
-local_backend: true
+# 로컬에서 테스트할 때만 true로 설정
+local_backend: false
 
 backend:
   name: github
-  repo: dudco/granite
+  repo: granite-climbing/granite-climbing.github.io
   branch: main
-  base_url: https://dudco.github.io
-  auth_endpoint: /granite/api/auth
+  # Netlify OAuth 프록시 사용 (Netlify 사이트 생성 후 URL 입력)
+  base_url: https://granite-climing.netlify.app
+  auth_endpoint: /api/v1/oauth/callback
 
 media_folder: public/images
 public_folder: /images
