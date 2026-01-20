@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import styles from './Header.module.css';
+import { getAssetPath } from '@/lib/utils';
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -41,7 +42,7 @@ export default function Header() {
     <>
       <header className={styles.header}>
         <div className={styles.logo}>
-          <img src="/images/logo.png" alt="Granite" />
+          <img src={getAssetPath('/images/logo.png')} alt="Granite" />
         </div>
         <button
           className={styles.hamburger}
@@ -59,7 +60,7 @@ export default function Header() {
           <nav className={styles.menu}>
             <div className={styles.menuHeader}>
               <div className={styles.menuLogo}>
-                <img src="/images/logo.png" alt="Granite" />
+                <img src={getAssetPath('/images/logo.png')} alt="Granite" />
               </div>
               <button
                 className={styles.closeButton}

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import { getAssetPath } from './utils';
 
 const contentDirectory = path.join(process.cwd(), 'content');
 
@@ -10,7 +11,7 @@ export function getSiteSettings() {
 
   if (!fs.existsSync(filePath)) {
     return {
-      heroImage: '/images/hero-sample.jpg',
+      heroImage: getAssetPath('/images/hero-sample.jpg'),
       slogan1: 'DREAM to DREAM!',
       slogan2: 'WORK LESS, CLIMB MORE!',
     };
@@ -20,7 +21,7 @@ export function getSiteSettings() {
   const { data } = matter(fileContents);
 
   return {
-    heroImage: data.heroImage || '/images/hero-sample.jpg',
+    heroImage: getAssetPath(data.heroImage || '/images/hero-sample.jpg'),
     slogan1: data.slogan1 || 'DREAM to DREAM!',
     slogan2: data.slogan2 || 'WORK LESS, CLIMB MORE!',
   };
@@ -59,7 +60,7 @@ export function getAllCrags() {
       return {
         slug,
         title: data.title || '',
-        thumbnail: data.thumbnail || '',
+        thumbnail: getAssetPath(data.thumbnail || ''),
         difficultyMin,
         difficultyMax,
         description: data.description || '',
