@@ -1,0 +1,29 @@
+.footer {
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.links {
+  display: flex;
+  justify-content: flex-start;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.links a {
+  font-size: 0.75rem;
+  color: #666;
+  text-decoration: none;
+}
+
+.instagram {
+  display: inline-block;
+  color: #333;
+  margin: 12px 0;
+}
+
+.copyright {
+  font-size: 0.7rem;
+  color: #999;
+  margin-top: 12px;
+}

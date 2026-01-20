@@ -1,0 +1,52 @@
+.section {
+  padding: 24px 16px;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: block;
+  padding: 16px 0;
+  border-bottom: 1px solid #eee;
+  text-decoration: none;
+  color: inherit;
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.info h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.info p {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.moreButton {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin-top: 16px;
+  background: #333;
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}

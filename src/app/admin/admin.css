@@ -1,0 +1,49 @@
+/* Admin 페이지 전용 스타일 - globals.css 오버라이드 */
+
+/* 레이아웃 리셋 */
+html {
+  display: block;
+  background: #fff;
+}
+
+body {
+  max-width: none;
+  width: 100%;
+  background: #fff;
+}
+
+/* globals.css 태그 선택자 리셋 */
+header {
+  padding: initial;
+}
+
+header h1 {
+  font-size: initial;
+  font-weight: initial;
+}
+
+nav {
+  margin-top: initial;
+}
+
+nav a {
+  margin-right: initial;
+  color: initial;
+  font-size: initial;
+  transition: initial;
+}
+
+main {
+  padding: initial;
+}
+
+a {
+  color: initial;
+  text-decoration: initial;
+}
+
+/* 모든 요소 리셋 */
+* {
+  margin: revert;
+  padding: revert;
+}

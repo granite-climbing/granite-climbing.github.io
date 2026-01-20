@@ -1,0 +1,171 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #000;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo img {
+  height: 28px;
+  width: auto;
+}
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 24px;
+  height: 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.hamburger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background-color: #fff;
+  transition: all 0.3s;
+}
+
+/* 사이드 메뉴 오버레이 */
+.menuOverlay {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: 100%;
+  max-width: var(--app-max-width, 430px);
+  height: 100vh;
+  background: #000;
+  z-index: 200;
+  transform: translateX(50%);
+  opacity: 0;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+.menuOverlay.open {
+  transform: translateX(-50%);
+  opacity: 1;
+}
+
+.menuOverlay.closing {
+  transform: translateX(50%);
+  opacity: 0;
+}
+
+@media (max-width: 430px) {
+  .menuOverlay {
+    left: 0;
+    transform: translateX(100%);
+    max-width: 100%;
+  }
+
+  .menuOverlay.open {
+    transform: translateX(0);
+  }
+
+  .menuOverlay.closing {
+    transform: translateX(100%);
+  }
+}
+
+/* 사이드 메뉴 */
+.menu {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+
+/* 메뉴 헤더 */
+.menuHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.menuLogo img {
+  height: 28px;
+  width: auto;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* 메뉴 리스트 */
+.menuList {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 메뉴 아이템 */
+.menuItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 12px 0;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.underline {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* 화살표 아이콘 */
+.arrow {
+  transition: transform 0.2s ease;
+}
+
+.arrowOpen {
+  transform: rotate(180deg);
+}
+
+/* 메뉴 그룹 */
+.menuGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 서브 메뉴 */
+.subMenu {
+  display: flex;
+  flex-direction: column;
+  padding-left: 16px;
+  gap: 4px;
+}
+
+.subMenu a {
+  padding: 10px 0;
+  color: #999;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.subMenu a:hover {
+  color: #fff;
+}

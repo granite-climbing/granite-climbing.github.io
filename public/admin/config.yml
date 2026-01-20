@@ -1,0 +1,106 @@
+# 로컬 개발용 설정 (decap-server 필요)
+local_backend: true
+
+backend:
+  name: github
+  repo: dudco/granite
+  branch: main
+  base_url: https://dudco.github.io
+  auth_endpoint: /granite/api/auth
+
+media_folder: public/images
+public_folder: /images
+
+collections:
+  # 사이트 설정 (싱글톤)
+  - name: settings
+    label: 사이트 설정
+    files:
+      - name: site
+        label: 메인 페이지 설정
+        file: content/settings/site.md
+        fields:
+          - { label: 히어로 이미지, name: heroImage, widget: image }
+          - { label: 슬로건 1, name: slogan1, widget: string, default: "DREAM to DREAM!" }
+          - { label: 슬로건 2, name: slogan2, widget: string, default: "WORK LESS, CLIMB MORE!" }
+
+  # 1. Crag (암장 정보)
+  - name: crags
+    label: Crag (암장)
+    folder: content/crags
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: 이름, name: title, widget: string }
+      - { label: 메인 이미지 (썸네일), name: thumbnail, widget: image }
+      - label: 최소 난이도
+        name: difficultyMin
+        widget: select
+        default: "V0"
+        options:
+          - { label: "V0", value: "V0" }
+          - { label: "V1", value: "V1" }
+          - { label: "V2", value: "V2" }
+          - { label: "V3", value: "V3" }
+          - { label: "V4", value: "V4" }
+          - { label: "V5", value: "V5" }
+          - { label: "V6", value: "V6" }
+          - { label: "V7", value: "V7" }
+          - { label: "V8", value: "V8" }
+          - { label: "V9", value: "V9" }
+          - { label: "V10", value: "V10" }
+          - { label: "V11", value: "V11" }
+          - { label: "V12", value: "V12" }
+          - { label: "V13", value: "V13" }
+          - { label: "V14", value: "V14" }
+          - { label: "V15", value: "V15" }
+          - { label: "V16", value: "V16" }
+      - label: 최대 난이도
+        name: difficultyMax
+        widget: select
+        default: "V10"
+        options:
+          - { label: "V0", value: "V0" }
+          - { label: "V1", value: "V1" }
+          - { label: "V2", value: "V2" }
+          - { label: "V3", value: "V3" }
+          - { label: "V4", value: "V4" }
+          - { label: "V5", value: "V5" }
+          - { label: "V6", value: "V6" }
+          - { label: "V7", value: "V7" }
+          - { label: "V8", value: "V8" }
+          - { label: "V9", value: "V9" }
+          - { label: "V10", value: "V10" }
+          - { label: "V11", value: "V11" }
+          - { label: "V12", value: "V12" }
+          - { label: "V13", value: "V13" }
+          - { label: "V14", value: "V14" }
+          - { label: "V15", value: "V15" }
+          - { label: "V16", value: "V16" }
+      - { label: 설명, name: description, widget: text, required: false }
+
+  # 2. Culture > Trable (여행기)
+  - name: trable
+    label: Culture - Trable (여행기)
+    folder: content/culture/trable
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { label: 제목, name: title, widget: string }
+      - { label: 작성일, name: date, widget: datetime }
+      - { label: 썸네일, name: thumbnail, widget: image }
+      - { label: 요약, name: excerpt, widget: text, required: false }
+      - { label: 본문, name: body, widget: markdown }
+
+  # 3. Culture > Rock Trip (락 트립)
+  - name: rocktrip
+    label: Culture - Rock Trip (락 트립)
+    folder: content/culture/rocktrip
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { label: 제목, name: title, widget: string }
+      - { label: 작성일, name: date, widget: datetime }
+      - { label: 썸네일, name: thumbnail, widget: image }
+      - { label: 요약, name: excerpt, widget: text, required: false }
+      - { label: 본문, name: body, widget: markdown }
