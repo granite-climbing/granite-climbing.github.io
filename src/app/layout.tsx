@@ -13,9 +13,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <head>
-        <script src="https://identity.netlify.com/v1/netlify-identity-widget.js" defer />
-      </head>
       <body>{children}</body>
     </html>
   )
