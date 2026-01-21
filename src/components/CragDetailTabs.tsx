@@ -97,10 +97,9 @@ export default function CragDetailTabs({ crag, boulders, problems, cultureItems 
 function InfoTab({ crag }: { crag: Crag }) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [isScriptReady, setIsScriptReady] = useState(false);
 
-  useEffect(() => {
-    if (!isScriptReady || !mapContainerRef.current || !crag.latitude || !crag.longitude) return;
+  const initializeMap = () => {
+    if (!mapContainerRef.current || !crag.latitude || !crag.longitude) return;
     if (typeof window === 'undefined' || !window.kakao?.maps) return;
 
     window.kakao.maps.load(() => {
@@ -126,10 +125,18 @@ function InfoTab({ crag }: { crag: Crag }) {
 
       setIsMapLoaded(true);
     });
-  }, [isScriptReady, crag.latitude, crag.longitude, crag.title]);
+  };
+
+  useEffect(() => {
+    // 스크립트가 이미 로드되어 있으면 바로 초기화
+    if (window.kakao?.maps) {
+      initializeMap();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crag.latitude, crag.longitude]);
 
   const handleScriptLoad = () => {
-    setIsScriptReady(true);
+    initializeMap();
   };
 
   const hasKakaoMap = crag.latitude && crag.longitude;
@@ -349,10 +356,9 @@ function RouteTab({ crag, problems }: { crag: Crag; problems: Problem[] }) {
 function MapTab({ crag }: { crag: Crag }) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [isScriptReady, setIsScriptReady] = useState(false);
 
-  useEffect(() => {
-    if (!isScriptReady || !mapContainerRef.current || !crag.latitude || !crag.longitude) return;
+  const initializeMap = () => {
+    if (!mapContainerRef.current || !crag.latitude || !crag.longitude) return;
     if (typeof window === 'undefined' || !window.kakao?.maps) return;
 
     window.kakao.maps.load(() => {
@@ -378,10 +384,18 @@ function MapTab({ crag }: { crag: Crag }) {
 
       setIsMapLoaded(true);
     });
-  }, [isScriptReady, crag.latitude, crag.longitude, crag.title]);
+  };
+
+  useEffect(() => {
+    // 스크립트가 이미 로드되어 있으면 바로 초기화
+    if (window.kakao?.maps) {
+      initializeMap();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crag.latitude, crag.longitude]);
 
   const handleScriptLoad = () => {
-    setIsScriptReady(true);
+    initializeMap();
   };
 
   if (!crag.latitude || !crag.longitude) {
