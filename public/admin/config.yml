@@ -3,11 +3,8 @@
 local_backend: false
 
 backend:
-  name: github
-  repo: granite-climbing/granite
+  name: git-gateway
   branch: main
-  base_url: https://granite-climing.netlify.app
-  auth_scope: repo
 
 media_folder: public/images
 public_folder: /images
