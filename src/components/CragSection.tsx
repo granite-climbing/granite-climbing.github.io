@@ -6,7 +6,8 @@ interface Crag {
   thumbnail: string;
   difficultyMin: string;
   difficultyMax: string;
-  problemCount?: number;
+  boulderCount: number;
+  problemCount: number;
 }
 
 interface CragSectionProps {
@@ -25,7 +26,7 @@ export default function CragSection({ crags }: CragSectionProps) {
             </div>
             <div className={styles.info}>
               <h3>{crag.title}</h3>
-              <p>{crag.problemCount || 10} problems · {crag.difficultyMin === crag.difficultyMax ? crag.difficultyMin : `${crag.difficultyMin}-${crag.difficultyMax}`}</p>
+              <p>{crag.problemCount} problems · {crag.difficultyMin === crag.difficultyMax ? crag.difficultyMin : `${crag.difficultyMin}-${crag.difficultyMax}`}</p>
             </div>
           </a>
         ))}
