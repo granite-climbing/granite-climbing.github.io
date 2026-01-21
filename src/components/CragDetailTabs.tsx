@@ -145,8 +145,8 @@ function InfoTab({ crag }: { crag: Crag }) {
           <>
             <Script
               src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}&autoload=false`}
-              strategy="beforeInteractive"
-              onReady={handleScriptLoad}
+              strategy="afterInteractive"
+              onLoad={handleScriptLoad}
             />
             <div ref={mapContainerRef} className={styles.infoKakaoMap}>
               {!isMapLoaded && (
@@ -405,7 +405,7 @@ function MapTab({ crag }: { crag: Crag }) {
       <Script
         src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}&autoload=false`}
         strategy="afterInteractive"
-        onReady={handleScriptLoad}
+        onLoad={handleScriptLoad}
       />
       <div ref={mapContainerRef} className={styles.kakaoMap}>
         {!isMapLoaded && (
