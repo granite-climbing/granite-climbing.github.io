@@ -1,29 +1,49 @@
 .footer {
-  padding: 24px 16px;
-  text-align: center;
+  background-color: #1a1a1a;
+  padding: 32px 24px;
+}
+
+.content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
 }
 
 .links {
   display: flex;
-  justify-content: flex-start;
-  gap: 16px;
-  margin-bottom: 8px;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .links a {
-  font-size: 0.75rem;
-  color: #666;
+  font-size: 0.8rem;
+  color: #999;
   text-decoration: none;
 }
 
+.links a:hover {
+  color: #ccc;
+}
+
 .instagram {
-  display: inline-block;
-  color: #333;
-  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #666;
+  border-radius: 4px;
+  color: #999;
+}
+
+.instagram:hover {
+  color: #ccc;
+  border-color: #999;
 }
 
 .copyright {
   font-size: 0.7rem;
-  color: #999;
-  margin-top: 12px;
+  color: #666;
+  margin: 0;
 }
