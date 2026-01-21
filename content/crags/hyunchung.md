@@ -1,4 +1,5 @@
 ---
+slug: hyunchung
 title: 현충볼더
 thumbnail: /images/crag-sample-2.png
 difficultyMin: V2

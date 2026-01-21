@@ -5,32 +5,68 @@ import { getAssetPath } from './utils';
 
 const contentDirectory = path.join(process.cwd(), 'content');
 
-// Boulder와 Problem 개수 계산 헬퍼 함수
-function getCragCounts(cragSlug: string): { boulderCount: number; problemCount: number } {
-  const bouldersDir = path.join(contentDirectory, 'crags', cragSlug, 'boulders');
+// 모든 Boulder 가져오기 (flat 구조)
+function getAllBoulders() {
+  const bouldersDir = path.join(contentDirectory, 'boulders');
 
   if (!fs.existsSync(bouldersDir)) {
-    return { boulderCount: 0, problemCount: 0 };
+    return [];
   }
 
-  const boulderFolders = fs.readdirSync(bouldersDir).filter((name) => {
-    const fullPath = path.join(bouldersDir, name);
-    return fs.statSync(fullPath).isDirectory();
-  });
+  const files = fs.readdirSync(bouldersDir).filter((f) => f.endsWith('.md'));
 
-  let totalProblems = 0;
+  return files.map((fileName) => {
+    const filePath = path.join(bouldersDir, fileName);
+    const fileContents = fs.readFileSync(filePath, 'utf8');
+    const { data } = matter(fileContents);
 
-  boulderFolders.forEach((boulderFolder) => {
-    const boulderPath = path.join(bouldersDir, boulderFolder);
-    const problemFiles = fs.readdirSync(boulderPath).filter(
-      (file) => file.endsWith('.md') && file !== 'index.md'
-    );
-    totalProblems += problemFiles.length;
+    return {
+      slug: data.slug || fileName.replace(/\.md$/, ''),
+      crag: data.crag || '',
+      title: data.title || '',
+      thumbnail: getAssetPath(data.thumbnail || ''),
+      description: data.description || '',
+    };
   });
+}
+
+// 모든 Problem 가져오기 (flat 구조)
+function getAllProblems() {
+  const problemsDir = path.join(contentDirectory, 'problems');
+
+  if (!fs.existsSync(problemsDir)) {
+    return [];
+  }
+
+  const files = fs.readdirSync(problemsDir).filter((f) => f.endsWith('.md'));
+
+  return files.map((fileName) => {
+    const filePath = path.join(problemsDir, fileName);
+    const fileContents = fs.readFileSync(filePath, 'utf8');
+    const { data } = matter(fileContents);
+
+    return {
+      slug: data.slug || fileName.replace(/\.md$/, ''),
+      boulder: data.boulder || '',
+      title: data.title || '',
+      grade: data.grade || 'V0',
+      description: data.description || '',
+    };
+  });
+}
+
+// Boulder와 Problem 개수 계산 헬퍼 함수 (relation 기반)
+function getCragCounts(cragSlug: string): { boulderCount: number; problemCount: number } {
+  const allBoulders = getAllBoulders();
+  const allProblems = getAllProblems();
+
+  const cragBoulders = allBoulders.filter((b) => b.crag === cragSlug);
+  const cragBoulderSlugs = cragBoulders.map((b) => b.slug);
+  const cragProblems = allProblems.filter((p) => cragBoulderSlugs.includes(p.boulder));
 
   return {
-    boulderCount: boulderFolders.length,
-    problemCount: totalProblems,
+    boulderCount: cragBoulders.length,
+    problemCount: cragProblems.length,
   };
 }
 
@@ -66,28 +102,10 @@ export function getAllCrags() {
 
   const entries = fs.readdirSync(cragsDirectory);
   const crags = entries
-    .filter((entry) => {
-      // .md 파일이거나 디렉토리인 경우
-      const fullPath = path.join(cragsDirectory, entry);
-      if (entry.endsWith('.md')) return true;
-      if (fs.statSync(fullPath).isDirectory()) {
-        // 디렉토리 안에 index.md가 있는지 확인
-        return fs.existsSync(path.join(fullPath, 'index.md'));
-      }
-      return false;
-    })
+    .filter((entry) => entry.endsWith('.md'))
     .map((entry) => {
-      let slug: string;
-      let filePath: string;
-
-      if (entry.endsWith('.md')) {
-        slug = entry.replace(/\.md$/, '');
-        filePath = path.join(cragsDirectory, entry);
-      } else {
-        slug = entry;
-        filePath = path.join(cragsDirectory, entry, 'index.md');
-      }
-
+      const slug = entry.replace(/\.md$/, '');
+      const filePath = path.join(cragsDirectory, entry);
       const fileContents = fs.readFileSync(filePath, 'utf8');
       const { data } = matter(fileContents);
 
@@ -104,10 +122,10 @@ export function getAllCrags() {
       }
 
       // boulder/problem 개수 자동 계산
-      const counts = getCragCounts(slug);
+      const counts = getCragCounts(data.slug || slug);
 
       return {
-        slug,
+        slug: data.slug || slug,
         title: data.title || '',
         thumbnail: getAssetPath(data.thumbnail || ''),
         difficultyMin,
@@ -193,21 +211,13 @@ function formatDate(date: string | Date): string {
 
 // 단일 Crag 상세 정보 가져오기
 export function getCragBySlug(slug: string) {
-  // 먼저 디렉토리 구조 확인
-  const cragDir = path.join(contentDirectory, 'crags', slug);
   const cragFile = path.join(contentDirectory, 'crags', `${slug}.md`);
 
-  let filePath: string;
-
-  if (fs.existsSync(path.join(cragDir, 'index.md'))) {
-    filePath = path.join(cragDir, 'index.md');
-  } else if (fs.existsSync(cragFile)) {
-    filePath = cragFile;
-  } else {
+  if (!fs.existsSync(cragFile)) {
     return null;
   }
 
-  const fileContents = fs.readFileSync(filePath, 'utf8');
+  const fileContents = fs.readFileSync(cragFile, 'utf8');
   const { data } = matter(fileContents);
 
   let difficultyMin = data.difficultyMin || 'V0';
@@ -222,10 +232,10 @@ export function getCragBySlug(slug: string) {
   }
 
   // boulder/problem 개수 자동 계산
-  const counts = getCragCounts(slug);
+  const counts = getCragCounts(data.slug || slug);
 
   return {
-    slug,
+    slug: data.slug || slug,
     title: data.title || '',
     thumbnail: getAssetPath(data.thumbnail || ''),
     difficultyMin,
@@ -244,124 +254,58 @@ export function getCragBySlug(slug: string) {
 
 // Crag의 Boulder 목록 가져오기
 export function getBouldersByCrag(cragSlug: string) {
-  const bouldersDir = path.join(contentDirectory, 'crags', cragSlug, 'boulders');
+  const allBoulders = getAllBoulders();
+  const allProblems = getAllProblems();
 
-  if (!fs.existsSync(bouldersDir)) {
-    return [];
-  }
+  const cragBoulders = allBoulders.filter((b) => b.crag === cragSlug);
 
-  const boulderFolders = fs.readdirSync(bouldersDir).filter((name) => {
-    const fullPath = path.join(bouldersDir, name);
-    return fs.statSync(fullPath).isDirectory();
-  });
-
-  return boulderFolders.map((folderName) => {
-    const indexPath = path.join(bouldersDir, folderName, 'index.md');
-
-    let data: Record<string, unknown> = {};
-    if (fs.existsSync(indexPath)) {
-      const fileContents = fs.readFileSync(indexPath, 'utf8');
-      data = matter(fileContents).data;
-    }
-
-    // Problem 개수 계산
-    const boulderPath = path.join(bouldersDir, folderName);
-    const problemFiles = fs.readdirSync(boulderPath).filter(
-      (file) => file.endsWith('.md') && file !== 'index.md'
-    );
+  return cragBoulders.map((boulder) => {
+    const problemCount = allProblems.filter((p) => p.boulder === boulder.slug).length;
 
     return {
-      slug: folderName,
-      title: (data.title as string) || folderName,
-      thumbnail: getAssetPath((data.thumbnail as string) || ''),
-      description: (data.description as string) || '',
-      problemCount: problemFiles.length,
+      slug: boulder.slug,
+      title: boulder.title,
+      thumbnail: boulder.thumbnail,
+      description: boulder.description,
+      problemCount,
     };
   });
 }
 
 // Boulder의 Problem 목록 가져오기
-export function getProblemsByBoulder(cragSlug: string, boulderSlug: string) {
-  const boulderDir = path.join(contentDirectory, 'crags', cragSlug, 'boulders', boulderSlug);
+export function getProblemsByBoulder(boulderSlug: string) {
+  const allProblems = getAllProblems();
 
-  if (!fs.existsSync(boulderDir)) {
-    return [];
-  }
-
-  const problemFiles = fs.readdirSync(boulderDir).filter(
-    (file) => file.endsWith('.md') && file !== 'index.md'
-  );
-
-  return problemFiles.map((fileName) => {
-    const slug = fileName.replace(/\.md$/, '');
-    const filePath = path.join(boulderDir, fileName);
-    const fileContents = fs.readFileSync(filePath, 'utf8');
-    const { data } = matter(fileContents);
-
-    return {
-      slug,
-      title: data.title || '',
-      grade: data.grade || 'V0',
-      description: data.description || '',
-    };
-  });
+  return allProblems
+    .filter((p) => p.boulder === boulderSlug)
+    .map((problem) => ({
+      slug: problem.slug,
+      title: problem.title,
+      grade: problem.grade,
+      description: problem.description,
+    }));
 }
 
 // Crag의 모든 Problem 목록 가져오기 (Route 탭용)
 export function getAllProblemsByCrag(cragSlug: string) {
-  const bouldersDir = path.join(contentDirectory, 'crags', cragSlug, 'boulders');
+  const allBoulders = getAllBoulders();
+  const allProblems = getAllProblems();
 
-  if (!fs.existsSync(bouldersDir)) {
-    return [];
-  }
+  const cragBoulders = allBoulders.filter((b) => b.crag === cragSlug);
+  const cragBoulderSlugs = cragBoulders.map((b) => b.slug);
 
-  const boulderFolders = fs.readdirSync(bouldersDir).filter((name) => {
-    const fullPath = path.join(bouldersDir, name);
-    return fs.statSync(fullPath).isDirectory();
-  });
+  return allProblems
+    .filter((p) => cragBoulderSlugs.includes(p.boulder))
+    .map((problem) => {
+      const boulder = cragBoulders.find((b) => b.slug === problem.boulder);
 
-  const allProblems: Array<{
-    slug: string;
-    title: string;
-    grade: string;
-    description: string;
-    boulderSlug: string;
-    boulderTitle: string;
-  }> = [];
-
-  boulderFolders.forEach((boulderFolder) => {
-    const boulderPath = path.join(bouldersDir, boulderFolder);
-    const indexPath = path.join(boulderPath, 'index.md');
-
-    // Boulder 제목 가져오기
-    let boulderTitle = boulderFolder;
-    if (fs.existsSync(indexPath)) {
-      const indexContents = fs.readFileSync(indexPath, 'utf8');
-      const { data } = matter(indexContents);
-      boulderTitle = (data.title as string) || boulderFolder;
-    }
-
-    // Problem 파일들 읽기
-    const problemFiles = fs.readdirSync(boulderPath).filter(
-      (file) => file.endsWith('.md') && file !== 'index.md'
-    );
-
-    problemFiles.forEach((fileName) => {
-      const slug = fileName.replace(/\.md$/, '');
-      const filePath = path.join(boulderPath, fileName);
-      const fileContents = fs.readFileSync(filePath, 'utf8');
-      const { data } = matter(fileContents);
-
-      allProblems.push({
-        slug,
-        title: data.title || '',
-        grade: data.grade || 'V0',
-        description: data.description || '',
-        boulderSlug: boulderFolder,
-        boulderTitle,
-      });
+      return {
+        slug: problem.slug,
+        title: problem.title,
+        grade: problem.grade,
+        description: problem.description,
+        boulderSlug: problem.boulder,
+        boulderTitle: boulder?.title || problem.boulder,
+      };
     });
-  });
-
-  return allProblems;
 }
