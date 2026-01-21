@@ -37,15 +37,25 @@ interface Problem {
   boulderTitle: string;
 }
 
+interface CultureItem {
+  slug: string;
+  title: string;
+  date: string;
+  thumbnail: string;
+  excerpt: string;
+  type: 'trable' | 'rocktrip';
+}
+
 interface CragDetailTabsProps {
   crag: Crag;
   boulders: Boulder[];
   problems: Problem[];
+  cultureItems: CultureItem[];
 }
 
 type TabType = 'info' | 'boulder' | 'route' | 'map' | 'travel';
 
-export default function CragDetailTabs({ crag, boulders, problems }: CragDetailTabsProps) {
+export default function CragDetailTabs({ crag, boulders, problems, cultureItems }: CragDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('info');
 
   const tabs: { id: TabType; label: string }[] = [
@@ -75,7 +85,7 @@ export default function CragDetailTabs({ crag, boulders, problems }: CragDetailT
         {activeTab === 'boulder' && <BoulderTab crag={crag} boulders={boulders} />}
         {activeTab === 'route' && <RouteTab crag={crag} problems={problems} />}
         {activeTab === 'map' && <MapTab crag={crag} />}
-        {activeTab === 'travel' && <TravelTab crag={crag} />}
+        {activeTab === 'travel' && <TravelTab cultureItems={cultureItems} />}
       </div>
     </div>
   );
@@ -295,54 +305,76 @@ function MapTab({ crag }: { crag: Crag }) {
   );
 }
 
-function TravelTab({ crag }: { crag: Crag }) {
+function TravelTab({ cultureItems }: { cultureItems: CultureItem[] }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(cultureItems.length / itemsPerPage);
+
+  const paginatedItems = cultureItems.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  if (cultureItems.length === 0) {
+    return (
+      <div className={styles.placeholderTab}>
+        <p>등록된 게시물이 없습니다.</p>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.travelTab}>
-      <div className={styles.infoItem}>
-        <div className={styles.infoIcon}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-            <circle cx="12" cy="10" r="3"></circle>
-          </svg>
-        </div>
-        <div className={styles.infoContent}>
-          <div className={styles.infoLabel}>Address</div>
-          <div className={styles.infoValue}>{crag.address || '주소 정보 없음'}</div>
-        </div>
+      <div className={styles.postList}>
+        {paginatedItems.map((item) => (
+          <a
+            href={`/culture/${item.type}/${item.slug}`}
+            key={`${item.type}-${item.slug}`}
+            className={styles.postCard}
+          >
+            <div className={styles.postContent}>
+              <h3 className={styles.postTitle}>{item.title}</h3>
+              <p className={styles.postExcerpt}>{item.excerpt}</p>
+              <span className={styles.postDate}>{item.date}</span>
+            </div>
+            <div className={styles.postThumbnail}>
+              {item.thumbnail ? (
+                <img src={item.thumbnail} alt={item.title} />
+              ) : (
+                <div className={styles.postThumbnailPlaceholder} />
+              )}
+            </div>
+          </a>
+        ))}
       </div>
 
-      <div className={styles.infoItem}>
-        <div className={styles.infoIcon}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-          </svg>
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button
+            className={styles.pageButton}
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            &lt;
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              className={`${styles.pageButton} ${currentPage === page ? styles.active : ''}`}
+              onClick={() => setCurrentPage(page)}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            className={styles.pageButton}
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            &gt;
+          </button>
         </div>
-        <div className={styles.infoContent}>
-          <div className={styles.infoLabel}>How to get there?</div>
-          <div className={styles.infoValue}>{crag.howToGetThere || '정보 없음'}</div>
-        </div>
-      </div>
-
-      <div className={styles.buttons}>
-        {crag.parkingSpot && (
-          <a href={crag.parkingSpot} target="_blank" rel="noopener noreferrer" className={styles.button}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M13 3H6v18h4v-6h3c3.31 0 6-2.69 6-6s-2.69-6-6-6zm.2 8H10V7h3.2c1.1 0 2 .9 2 2s-.9 2-2 2z"/>
-            </svg>
-            Parking Spot
-          </a>
-        )}
-        {crag.cafeLink && (
-          <a href={crag.cafeLink} target="_blank" rel="noopener noreferrer" className={styles.button}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.5 3H6c-1.1 0-2 .9-2 2v5.71c0 3.83 2.95 7.18 6.78 7.29 3.96.12 7.22-3.06 7.22-7V8h1.5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 3h-1.5V5h1.5v1zM4 19h16v2H4z"/>
-            </svg>
-            Cafe
-          </a>
-        )}
-      </div>
+      )}
     </div>
   );
 }

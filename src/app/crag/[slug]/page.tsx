@@ -3,7 +3,7 @@ import Header from '@/components/Header';
 import CragDetailBanner from '@/components/CragDetailBanner';
 import CragDetailTabs from '@/components/CragDetailTabs';
 import Footer from '@/components/Footer';
-import { getCragBySlug, getAllCrags, getBouldersByCrag, getAllProblemsByCrag } from '@/lib/content';
+import { getCragBySlug, getAllCrags, getBouldersByCrag, getAllProblemsByCrag, getAllCultureItems } from '@/lib/content';
 
 interface CragDetailPageProps {
   params: { slug: string };
@@ -25,6 +25,7 @@ export default async function CragDetailPage({ params }: CragDetailPageProps) {
 
   const boulders = getBouldersByCrag(params.slug);
   const problems = getAllProblemsByCrag(params.slug);
+  const cultureItems = getAllCultureItems();
 
   return (
     <>
@@ -35,7 +36,7 @@ export default async function CragDetailPage({ params }: CragDetailPageProps) {
           title={crag.title}
           description={crag.description}
         />
-        <CragDetailTabs crag={crag} boulders={boulders} problems={problems} />
+        <CragDetailTabs crag={crag} boulders={boulders} problems={problems} cultureItems={cultureItems} />
       </main>
       <Footer />
     </>
