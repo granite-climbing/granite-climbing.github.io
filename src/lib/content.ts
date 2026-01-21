@@ -306,3 +306,62 @@ export function getProblemsByBoulder(cragSlug: string, boulderSlug: string) {
     };
   });
 }
+
+// Crag의 모든 Problem 목록 가져오기 (Route 탭용)
+export function getAllProblemsByCrag(cragSlug: string) {
+  const bouldersDir = path.join(contentDirectory, 'crags', cragSlug, 'boulders');
+
+  if (!fs.existsSync(bouldersDir)) {
+    return [];
+  }
+
+  const boulderFolders = fs.readdirSync(bouldersDir).filter((name) => {
+    const fullPath = path.join(bouldersDir, name);
+    return fs.statSync(fullPath).isDirectory();
+  });
+
+  const allProblems: Array<{
+    slug: string;
+    title: string;
+    grade: string;
+    description: string;
+    boulderSlug: string;
+    boulderTitle: string;
+  }> = [];
+
+  boulderFolders.forEach((boulderFolder) => {
+    const boulderPath = path.join(bouldersDir, boulderFolder);
+    const indexPath = path.join(boulderPath, 'index.md');
+
+    // Boulder 제목 가져오기
+    let boulderTitle = boulderFolder;
+    if (fs.existsSync(indexPath)) {
+      const indexContents = fs.readFileSync(indexPath, 'utf8');
+      const { data } = matter(indexContents);
+      boulderTitle = (data.title as string) || boulderFolder;
+    }
+
+    // Problem 파일들 읽기
+    const problemFiles = fs.readdirSync(boulderPath).filter(
+      (file) => file.endsWith('.md') && file !== 'index.md'
+    );
+
+    problemFiles.forEach((fileName) => {
+      const slug = fileName.replace(/\.md$/, '');
+      const filePath = path.join(boulderPath, fileName);
+      const fileContents = fs.readFileSync(filePath, 'utf8');
+      const { data } = matter(fileContents);
+
+      allProblems.push({
+        slug,
+        title: data.title || '',
+        grade: data.grade || 'V0',
+        description: data.description || '',
+        boulderSlug: boulderFolder,
+        boulderTitle,
+      });
+    });
+  });
+
+  return allProblems;
+}

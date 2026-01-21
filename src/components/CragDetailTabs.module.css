@@ -256,6 +256,109 @@
   margin: 0;
 }
 
+/* Route Tab */
+.routeTab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  color: #999;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 12px 12px 40px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  border-color: #999;
+}
+
+.searchInput::placeholder {
+  color: #bbb;
+}
+
+.routeTable {
+  border-top: 1px solid #e0e0e0;
+}
+
+.routeHeader {
+  display: flex;
+  padding: 12px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.routeHeaderCell {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sortArrow {
+  font-size: 0.7rem;
+  color: #999;
+}
+
+.routeList {
+  display: flex;
+  flex-direction: column;
+}
+
+.routeRow {
+  display: flex;
+  padding: 14px 0;
+  border-bottom: 1px solid #f0f0f0;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.2s;
+}
+
+.routeRow:hover {
+  background-color: #f9f9f9;
+}
+
+.routeCell {
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.routeColumn {
+  flex: 2;
+}
+
+.gradeColumn {
+  flex: 1;
+  text-align: center;
+}
+
+.boulderColumn {
+  flex: 1.5;
+  text-align: right;
+  color: #999;
+}
+
 /* Travel Tab */
 .travelTab {
   display: flex;

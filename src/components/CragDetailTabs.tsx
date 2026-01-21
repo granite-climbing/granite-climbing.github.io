@@ -28,14 +28,24 @@ interface Boulder {
   problemCount: number;
 }
 
+interface Problem {
+  slug: string;
+  title: string;
+  grade: string;
+  description: string;
+  boulderSlug: string;
+  boulderTitle: string;
+}
+
 interface CragDetailTabsProps {
   crag: Crag;
   boulders: Boulder[];
+  problems: Problem[];
 }
 
 type TabType = 'info' | 'boulder' | 'route' | 'map' | 'travel';
 
-export default function CragDetailTabs({ crag, boulders }: CragDetailTabsProps) {
+export default function CragDetailTabs({ crag, boulders, problems }: CragDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('info');
 
   const tabs: { id: TabType; label: string }[] = [
@@ -63,7 +73,7 @@ export default function CragDetailTabs({ crag, boulders }: CragDetailTabsProps) 
       <div className={styles.content}>
         {activeTab === 'info' && <InfoTab crag={crag} />}
         {activeTab === 'boulder' && <BoulderTab crag={crag} boulders={boulders} />}
-        {activeTab === 'route' && <RouteTab />}
+        {activeTab === 'route' && <RouteTab crag={crag} problems={problems} />}
         {activeTab === 'map' && <MapTab crag={crag} />}
         {activeTab === 'travel' && <TravelTab crag={crag} />}
       </div>
@@ -182,10 +192,89 @@ function BoulderTab({ crag, boulders }: { crag: Crag; boulders: Boulder[] }) {
   );
 }
 
-function RouteTab() {
+function RouteTab({ crag, problems }: { crag: Crag; problems: Problem[] }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'grade' | 'boulder'>('grade');
+
+  const filteredProblems = problems.filter((problem) =>
+    problem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    problem.grade.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const sortedProblems = [...filteredProblems].sort((a, b) => {
+    if (sortBy === 'grade') {
+      const gradeA = parseInt(a.grade.replace('V', '')) || 0;
+      const gradeB = parseInt(b.grade.replace('V', '')) || 0;
+      return gradeA - gradeB;
+    }
+    return a.boulderTitle.localeCompare(b.boulderTitle);
+  });
+
+  if (problems.length === 0) {
+    return (
+      <div className={styles.placeholderTab}>
+        <p>등록된 루트가 없습니다.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className={styles.placeholderTab}>
-      <p>루트 정보가 준비중입니다.</p>
+    <div className={styles.routeTab}>
+      <div className={styles.searchBox}>
+        <svg className={styles.searchIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        <input
+          type="text"
+          placeholder="루트 이름 검색, 난이도 검색"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={styles.searchInput}
+        />
+      </div>
+
+      <div className={styles.routeTable}>
+        <div className={styles.routeHeader}>
+          <button
+            className={`${styles.routeHeaderCell} ${styles.routeColumn}`}
+            onClick={() => setSortBy('boulder')}
+          >
+            Route
+            {sortBy === 'boulder' && <span className={styles.sortArrow}>▼</span>}
+          </button>
+          <button
+            className={`${styles.routeHeaderCell} ${styles.gradeColumn}`}
+            onClick={() => setSortBy('grade')}
+          >
+            Grade
+            {sortBy === 'grade' && <span className={styles.sortArrow}>▼</span>}
+          </button>
+          <div className={`${styles.routeHeaderCell} ${styles.boulderColumn}`}>
+            Boulder
+          </div>
+        </div>
+
+        <div className={styles.routeList}>
+          {sortedProblems.map((problem, index) => (
+            <a
+              href={`/crag/${crag.slug}/boulder/${problem.boulderSlug}#${problem.slug}`}
+              key={`${problem.boulderSlug}-${problem.slug}-${index}`}
+              className={styles.routeRow}
+            >
+              <div className={`${styles.routeCell} ${styles.routeColumn}`}>
+                {problem.title}
+              </div>
+              <div className={`${styles.routeCell} ${styles.gradeColumn}`}>
+                {problem.grade}
+              </div>
+              <div className={`${styles.routeCell} ${styles.boulderColumn}`}>
+                {problem.boulderTitle}
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
