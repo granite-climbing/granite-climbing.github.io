@@ -20,13 +20,22 @@ interface Crag {
   mapLink: string;
 }
 
+interface Boulder {
+  slug: string;
+  title: string;
+  thumbnail: string;
+  description: string;
+  problemCount: number;
+}
+
 interface CragDetailTabsProps {
   crag: Crag;
+  boulders: Boulder[];
 }
 
 type TabType = 'info' | 'boulder' | 'route' | 'map' | 'travel';
 
-export default function CragDetailTabs({ crag }: CragDetailTabsProps) {
+export default function CragDetailTabs({ crag, boulders }: CragDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('info');
 
   const tabs: { id: TabType; label: string }[] = [
@@ -53,7 +62,7 @@ export default function CragDetailTabs({ crag }: CragDetailTabsProps) {
 
       <div className={styles.content}>
         {activeTab === 'info' && <InfoTab crag={crag} />}
-        {activeTab === 'boulder' && <BoulderTab crag={crag} />}
+        {activeTab === 'boulder' && <BoulderTab crag={crag} boulders={boulders} />}
         {activeTab === 'route' && <RouteTab />}
         {activeTab === 'map' && <MapTab crag={crag} />}
         {activeTab === 'travel' && <TravelTab crag={crag} />}
@@ -135,11 +144,40 @@ function InfoTab({ crag }: { crag: Crag }) {
   );
 }
 
-function BoulderTab({ crag }: { crag: Crag }) {
+function BoulderTab({ crag, boulders }: { crag: Crag; boulders: Boulder[] }) {
+  if (boulders.length === 0) {
+    return (
+      <div className={styles.placeholderTab}>
+        <p>등록된 볼더가 없습니다.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className={styles.placeholderTab}>
-      <p>볼더 목록이 준비중입니다.</p>
-      <p className={styles.placeholderInfo}>{crag.boulderCount}개의 볼더가 등록될 예정입니다.</p>
+    <div className={styles.boulderTab}>
+      <div className={styles.boulderList}>
+        {boulders.map((boulder) => (
+          <a
+            href={`/crag/${crag.slug}/boulder/${boulder.slug}`}
+            key={boulder.slug}
+            className={styles.boulderCard}
+          >
+            <div className={styles.boulderImage}>
+              {boulder.thumbnail ? (
+                <img src={boulder.thumbnail} alt={boulder.title} />
+              ) : (
+                <div className={styles.boulderImagePlaceholder} />
+              )}
+            </div>
+            <div className={styles.boulderInfo}>
+              <h3 className={styles.boulderTitle}>{boulder.title}</h3>
+              <p className={styles.boulderMeta}>
+                {boulder.problemCount} problems · {crag.difficultyMin}-{crag.difficultyMax}
+              </p>
+            </div>
+          </a>
+        ))}
+      </div>
     </div>
   );
 }

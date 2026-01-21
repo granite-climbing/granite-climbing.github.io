@@ -200,6 +200,62 @@
   object-fit: cover;
 }
 
+/* Boulder Tab */
+.boulderTab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.boulderList {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.boulderCard {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.boulderImage {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.boulderImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.boulderImagePlaceholder {
+  width: 100%;
+  height: 100%;
+  background-color: #c0c0c0;
+}
+
+.boulderInfo {
+  padding: 0 4px;
+}
+
+.boulderTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px 0;
+}
+
+.boulderMeta {
+  font-size: 0.85rem;
+  color: #999;
+  margin: 0;
+}
+
 /* Travel Tab */
 .travelTab {
   display: flex;
