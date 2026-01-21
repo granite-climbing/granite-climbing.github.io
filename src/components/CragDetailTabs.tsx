@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import Script from 'next/script';
+import { useEffect, useRef, useState } from 'react';
 import styles from './CragDetailTabs.module.css';
 
 interface Crag {
@@ -18,6 +19,8 @@ interface Crag {
   cafeLink: string;
   mapImage: string;
   mapLink: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface Boulder {
@@ -92,6 +95,45 @@ export default function CragDetailTabs({ crag, boulders, problems, cultureItems 
 }
 
 function InfoTab({ crag }: { crag: Crag }) {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [isScriptReady, setIsScriptReady] = useState(false);
+
+  useEffect(() => {
+    if (!isScriptReady || !mapContainerRef.current || !crag.latitude || !crag.longitude) return;
+    if (typeof window === 'undefined' || !window.kakao?.maps) return;
+
+    window.kakao.maps.load(() => {
+      if (!mapContainerRef.current) return;
+
+      const position = new window.kakao.maps.LatLng(crag.latitude!, crag.longitude!);
+      const options = {
+        center: position,
+        level: 4,
+      };
+
+      const map = new window.kakao.maps.Map(mapContainerRef.current, options);
+
+      const marker = new window.kakao.maps.Marker({
+        position: position,
+        map: map,
+      });
+
+      const infoWindow = new window.kakao.maps.InfoWindow({
+        content: `<div style="padding:5px;font-size:12px;">${crag.title}</div>`,
+      });
+      infoWindow.open(map, marker);
+
+      setIsMapLoaded(true);
+    });
+  }, [isScriptReady, crag.latitude, crag.longitude, crag.title]);
+
+  const handleScriptLoad = () => {
+    setIsScriptReady(true);
+  };
+
+  const hasKakaoMap = crag.latitude && crag.longitude;
+
   return (
     <div className={styles.infoTab}>
       <div className={styles.summary}>
@@ -99,11 +141,26 @@ function InfoTab({ crag }: { crag: Crag }) {
       </div>
 
       <div className={styles.mapPreview}>
-        {crag.mapImage ? (
+        {hasKakaoMap ? (
+          <>
+            <Script
+              src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}&autoload=false`}
+              strategy="beforeInteractive"
+              onReady={handleScriptLoad}
+            />
+            <div ref={mapContainerRef} className={styles.infoKakaoMap}>
+              {!isMapLoaded && (
+                <div className={styles.mapLoading}>
+                  <p>지도를 불러오는 중...</p>
+                </div>
+              )}
+            </div>
+          </>
+        ) : crag.mapImage ? (
           <a href={crag.mapLink} target="_blank" rel="noopener noreferrer">
             <img src={crag.mapImage} alt="지도" className={styles.mapImage} />
             <div className={styles.mapOverlay}>
-              <span className={styles.mapLabel}>카카오맵 연동</span>
+              <span className={styles.mapLabel}>지도 보기</span>
             </div>
           </a>
         ) : (
@@ -290,16 +347,82 @@ function RouteTab({ crag, problems }: { crag: Crag; problems: Problem[] }) {
 }
 
 function MapTab({ crag }: { crag: Crag }) {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [isScriptReady, setIsScriptReady] = useState(false);
+
+  useEffect(() => {
+    if (!isScriptReady || !mapContainerRef.current || !crag.latitude || !crag.longitude) return;
+    if (typeof window === 'undefined' || !window.kakao?.maps) return;
+
+    window.kakao.maps.load(() => {
+      if (!mapContainerRef.current) return;
+
+      const position = new window.kakao.maps.LatLng(crag.latitude!, crag.longitude!);
+      const options = {
+        center: position,
+        level: 3,
+      };
+
+      const map = new window.kakao.maps.Map(mapContainerRef.current, options);
+
+      const marker = new window.kakao.maps.Marker({
+        position: position,
+        map: map,
+      });
+
+      const infoWindow = new window.kakao.maps.InfoWindow({
+        content: `<div style="padding:5px;font-size:12px;">${crag.title}</div>`,
+      });
+      infoWindow.open(map, marker);
+
+      setIsMapLoaded(true);
+    });
+  }, [isScriptReady, crag.latitude, crag.longitude, crag.title]);
+
+  const handleScriptLoad = () => {
+    setIsScriptReady(true);
+  };
+
+  if (!crag.latitude || !crag.longitude) {
+    return (
+      <div className={styles.mapTab}>
+        {crag.mapImage ? (
+          <a href={crag.mapLink} target="_blank" rel="noopener noreferrer" className={styles.fullMap}>
+            <img src={crag.mapImage} alt="지도" />
+          </a>
+        ) : (
+          <div className={styles.placeholderTab}>
+            <p>지도가 준비중입니다.</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={styles.mapTab}>
-      {crag.mapImage ? (
-        <a href={crag.mapLink} target="_blank" rel="noopener noreferrer" className={styles.fullMap}>
-          <img src={crag.mapImage} alt="지도" />
+      <Script
+        src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}&autoload=false`}
+        strategy="afterInteractive"
+        onReady={handleScriptLoad}
+      />
+      <div ref={mapContainerRef} className={styles.kakaoMap}>
+        {!isMapLoaded && (
+          <div className={styles.mapLoading}>
+            <p>지도를 불러오는 중...</p>
+          </div>
+        )}
+      </div>
+      {crag.mapLink && (
+        <a
+          href={crag.mapLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.mapExternalLink}
+        >
+          카카오맵에서 보기
         </a>
-      ) : (
-        <div className={styles.placeholderTab}>
-          <p>지도가 준비중입니다.</p>
-        </div>
       )}
     </div>
   );

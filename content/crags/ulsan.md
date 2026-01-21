@@ -11,4 +11,6 @@ parkingSpot: https://map.kakao.com/parking
 cafeLink: https://map.kakao.com/cafe
 mapImage: /images/map-sample.png
 mapLink: https://map.kakao.com
+latitude: 36.9876
+longitude: 128.3654
 ---

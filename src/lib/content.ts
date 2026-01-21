@@ -249,6 +249,8 @@ export function getCragBySlug(slug: string) {
     cafeLink: data.cafeLink || '',
     mapImage: getAssetPath(data.mapImage || ''),
     mapLink: data.mapLink || '',
+    latitude: data.latitude || undefined,
+    longitude: data.longitude || undefined,
   };
 }
 

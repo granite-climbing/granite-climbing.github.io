@@ -1,9 +1,9 @@
 # 로컬 개발용 설정 (decap-server 필요)
-# 로컬에서 테스트할 때만 true로 설정
-local_backend: false
+local_backend: true
 
 backend:
-  name: git-gateway
+  name: github
+  repo: granite-climbing/granite-climbing.github.io
   branch: main
 
 media_folder: public/images
@@ -25,83 +25,59 @@ collections:
   # 1. Crag (암장 정보)
   - name: crags
     label: Crag (암장)
-    label_singular: Crag
     folder: content/crags
     create: true
     slug: "{{slug}}"
-    identifier_field: slug
-    summary: "{{title}}"
     fields:
-      - { label: Slug (영문), name: slug, widget: string, hint: "URL에 사용될 영문 식별자 (예: ulsan, anyang)" }
       - { label: 이름, name: title, widget: string }
-      - { label: 메인 이미지 (썸네일), name: thumbnail, widget: image, required: false }
+      - { label: 메인 이미지 (썸네일), name: thumbnail, widget: image }
       - label: 최소 난이도
         name: difficultyMin
         widget: select
         default: "V0"
-        options: ["V0", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16"]
+        options:
+          - { label: "V0", value: "V0" }
+          - { label: "V1", value: "V1" }
+          - { label: "V2", value: "V2" }
+          - { label: "V3", value: "V3" }
+          - { label: "V4", value: "V4" }
+          - { label: "V5", value: "V5" }
+          - { label: "V6", value: "V6" }
+          - { label: "V7", value: "V7" }
+          - { label: "V8", value: "V8" }
+          - { label: "V9", value: "V9" }
+          - { label: "V10", value: "V10" }
+          - { label: "V11", value: "V11" }
+          - { label: "V12", value: "V12" }
+          - { label: "V13", value: "V13" }
+          - { label: "V14", value: "V14" }
+          - { label: "V15", value: "V15" }
+          - { label: "V16", value: "V16" }
       - label: 최대 난이도
         name: difficultyMax
         widget: select
         default: "V10"
-        options: ["V0", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16"]
-      - { label: 설명, name: description, widget: text, required: false }
-      - { label: 주소, name: address, widget: string, required: false }
-      - { label: 찾아가는 방법, name: howToGetThere, widget: text, required: false }
-      - { label: 주차장 링크, name: parkingSpot, widget: string, required: false }
-      - { label: 카페 링크, name: cafeLink, widget: string, required: false }
-      - { label: 지도 이미지, name: mapImage, widget: image, required: false }
-      - { label: 지도 링크 (카카오맵), name: mapLink, widget: string, required: false }
-
-  # 2. Boulder (볼더) - Crag와 relation으로 연결
-  - name: boulders
-    label: Boulder (볼더)
-    label_singular: Boulder
-    folder: content/boulders
-    create: true
-    slug: "{{slug}}"
-    identifier_field: slug
-    summary: "{{title}} ({{crag}})"
-    fields:
-      - { label: Slug (영문), name: slug, widget: string, hint: "URL에 사용될 영문 식별자 (예: main-boulder)" }
-      - label: 소속 Crag
-        name: crag
-        widget: relation
-        collection: crags
-        search_fields: ["title", "slug"]
-        value_field: "slug"
-        display_fields: ["title"]
-      - { label: 이름, name: title, widget: string }
-      - { label: 썸네일, name: thumbnail, widget: image, required: false }
+        options:
+          - { label: "V0", value: "V0" }
+          - { label: "V1", value: "V1" }
+          - { label: "V2", value: "V2" }
+          - { label: "V3", value: "V3" }
+          - { label: "V4", value: "V4" }
+          - { label: "V5", value: "V5" }
+          - { label: "V6", value: "V6" }
+          - { label: "V7", value: "V7" }
+          - { label: "V8", value: "V8" }
+          - { label: "V9", value: "V9" }
+          - { label: "V10", value: "V10" }
+          - { label: "V11", value: "V11" }
+          - { label: "V12", value: "V12" }
+          - { label: "V13", value: "V13" }
+          - { label: "V14", value: "V14" }
+          - { label: "V15", value: "V15" }
+          - { label: "V16", value: "V16" }
       - { label: 설명, name: description, widget: text, required: false }
 
-  # 3. Problem (문제) - Boulder와 relation으로 연결
-  - name: problems
-    label: Problem (문제)
-    label_singular: Problem
-    folder: content/problems
-    create: true
-    slug: "{{slug}}"
-    identifier_field: slug
-    summary: "{{title}} ({{grade}}) - {{boulder}}"
-    fields:
-      - { label: Slug (영문), name: slug, widget: string, hint: "URL에 사용될 영문 식별자 (예: start-route)" }
-      - label: 소속 Boulder
-        name: boulder
-        widget: relation
-        collection: boulders
-        search_fields: ["title", "slug"]
-        value_field: "slug"
-        display_fields: ["title"]
-      - { label: 이름, name: title, widget: string }
-      - label: 난이도
-        name: grade
-        widget: select
-        default: "V0"
-        options: ["V0", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12", "V13", "V14", "V15", "V16"]
-      - { label: 설명, name: description, widget: text, required: false }
-
-  # 4. Culture > Trable (여행기)
+  # 2. Culture > Trable (여행기)
   - name: trable
     label: Culture - Trable (여행기)
     folder: content/culture/trable
@@ -110,11 +86,11 @@ collections:
     fields:
       - { label: 제목, name: title, widget: string }
       - { label: 작성일, name: date, widget: datetime }
-      - { label: 썸네일, name: thumbnail, widget: image, required: false }
+      - { label: 썸네일, name: thumbnail, widget: image }
       - { label: 요약, name: excerpt, widget: text, required: false }
       - { label: 본문, name: body, widget: markdown }
 
-  # 5. Culture > Rock Trip (락 트립)
+  # 3. Culture > Rock Trip (락 트립)
   - name: rocktrip
     label: Culture - Rock Trip (락 트립)
     folder: content/culture/rocktrip
@@ -123,6 +99,6 @@ collections:
     fields:
       - { label: 제목, name: title, widget: string }
       - { label: 작성일, name: date, widget: datetime }
-      - { label: 썸네일, name: thumbnail, widget: image, required: false }
+      - { label: 썸네일, name: thumbnail, widget: image }
       - { label: 요약, name: excerpt, widget: text, required: false }
       - { label: 본문, name: body, widget: markdown }
