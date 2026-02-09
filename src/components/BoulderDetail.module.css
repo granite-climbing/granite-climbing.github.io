@@ -135,11 +135,32 @@
 .problemMeta {
   margin-top: 4px;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .problemBoulder {
   font-size: 0.8rem;
   color: #999;
+}
+
+.betaButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 14px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #333;
+  text-decoration: none;
+  background: #efefef;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.betaButton:hover {
+  background: #e0e0e0;
 }
