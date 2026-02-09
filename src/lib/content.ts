@@ -254,6 +254,12 @@ export function getCragBySlug(slug: string) {
   };
 }
 
+// 단일 Boulder 상세 정보 가져오기
+export function getBoulderBySlug(boulderSlug: string) {
+  const allBoulders = getAllBoulders();
+  return allBoulders.find((b) => b.slug === boulderSlug) || null;
+}
+
 // Crag의 Boulder 목록 가져오기
 export function getBouldersByCrag(cragSlug: string) {
   const allBoulders = getAllBoulders();
