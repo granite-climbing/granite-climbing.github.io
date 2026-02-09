@@ -142,6 +142,8 @@ collections:
           - { label: "V14", value: "V14" }
           - { label: "V15", value: "V15" }
           - { label: "V16", value: "V16" }
+      - { label: 해시태그, name: hashtag, widget: string, required: false, hint: "베타 영상 검색용 인스타그램 해시태그 (예: granite_울산천_시작의길)" }
+      - { label: "FA (초등자 인스타 ID)", name: fa, widget: string, required: false, hint: "초등자 인스타그램 ID (예: @yeochan6409)" }
       - { label: 설명, name: description, widget: text, required: false }
 
   # 2. Culture > Trable (여행기)

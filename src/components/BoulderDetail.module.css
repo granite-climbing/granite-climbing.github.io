@@ -132,17 +132,29 @@
   color: #333;
 }
 
-.problemMeta {
+.problemSubInfo {
   margin-top: 4px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .problemBoulder {
   font-size: 0.8rem;
   color: #999;
+}
+
+.problemFa {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.problemMeta {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .betaButton {

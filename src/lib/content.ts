@@ -50,6 +50,8 @@ function getAllProblems() {
       boulder: data.boulder || '',
       title: data.title || '',
       grade: data.grade || 'V0',
+      hashtag: data.hashtag || '',
+      fa: data.fa || '',
       description: data.description || '',
     };
   });
@@ -290,6 +292,8 @@ export function getProblemsByBoulder(boulderSlug: string) {
       slug: problem.slug,
       title: problem.title,
       grade: problem.grade,
+      hashtag: problem.hashtag,
+      fa: problem.fa,
       description: problem.description,
     }));
 }

@@ -14,6 +14,8 @@ interface Problem {
   slug: string;
   title: string;
   grade: string;
+  hashtag: string;
+  fa: string;
   description: string;
 }
 
@@ -63,7 +65,14 @@ export default function BoulderDetail({ cragSlug, boulder, problems, allBoulders
   }, [betaProblem]);
 
   const getHashtag = (problem: Problem) => {
+    if (problem.hashtag) {
+      return problem.hashtag.startsWith('#') ? problem.hashtag : `#${problem.hashtag}`;
+    }
     return `#${problem.slug.replace(/-/g, '_')}`;
+  };
+
+  const getHashtagRaw = (problem: Problem) => {
+    return getHashtag(problem).replace(/^#/, '');
   };
 
   const getCaption = (problem: Problem) => {
@@ -71,18 +80,19 @@ export default function BoulderDetail({ cragSlug, boulder, problems, allBoulders
   };
 
   const handleCopyAndOpen = async (problem: Problem) => {
+    const tag = getHashtagRaw(problem);
     try {
       await navigator.clipboard.writeText(getCaption(problem));
       setCopied(true);
       setTimeout(() => {
         window.open(
-          `https://www.instagram.com/explore/tags/${encodeURIComponent(problem.slug.replace(/-/g, '_'))}/`,
+          `https://www.instagram.com/explore/tags/${encodeURIComponent(tag)}/`,
           '_blank'
         );
       }, 300);
     } catch {
       window.open(
-        `https://www.instagram.com/explore/tags/${encodeURIComponent(problem.slug.replace(/-/g, '_'))}/`,
+        `https://www.instagram.com/explore/tags/${encodeURIComponent(tag)}/`,
         '_blank'
       );
     }
@@ -149,8 +159,12 @@ export default function BoulderDetail({ cragSlug, boulder, problems, allBoulders
                   <h3 className={styles.problemTitle}>{problem.title}</h3>
                   <span className={styles.problemGrade}>{problem.grade}</span>
                 </div>
-                <div className={styles.problemMeta}>
+                <div className={styles.problemSubInfo}>
                   <span className={styles.problemBoulder}>{boulder.title}</span>
+                  {problem.fa && <span className={styles.problemFa}>FA {problem.fa}</span>}
+                </div>
+                <div className={styles.problemMeta}>
+                  <div />
                   <button
                     className={styles.betaButton}
                     onClick={() => openBetaSheet(problem)}
