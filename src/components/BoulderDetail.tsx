@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styles from './BoulderDetail.module.css';
 
 interface Boulder {
@@ -19,30 +19,62 @@ interface Problem {
   description: string;
 }
 
+interface InstagramMedia {
+  id: string;
+  media_url: string;
+  thumbnail_url?: string;
+  permalink: string;
+  media_type: 'IMAGE' | 'VIDEO' | 'CAROUSEL_ALBUM';
+}
+
 interface BoulderDetailProps {
   cragSlug: string;
+  cragTitle: string;
   boulder: Boulder;
   problems: Problem[];
   allBoulders: Boulder[];
 }
 
-export default function BoulderDetail({ cragSlug, boulder, problems, allBoulders }: BoulderDetailProps) {
+export default function BoulderDetail({ cragSlug, cragTitle, boulder, problems, allBoulders }: BoulderDetailProps) {
   const currentIndex = allBoulders.findIndex((b) => b.slug === boulder.slug);
   const total = allBoulders.length;
   const [betaProblem, setBetaProblem] = useState<Problem | null>(null);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [betaMedia, setBetaMedia] = useState<InstagramMedia[]>([]);
+  const [betaLoading, setBetaLoading] = useState(false);
 
   const prevBoulder = currentIndex > 0 ? allBoulders[currentIndex - 1] : null;
   const nextBoulder = currentIndex < total - 1 ? allBoulders[currentIndex + 1] : null;
 
+  const fetchBetaMedia = useCallback(async (hashtag: string) => {
+    const apiUrl = process.env.NEXT_PUBLIC_INSTAGRAM_API_URL;
+    if (!apiUrl) return; // Instagram API not configured yet
+
+    setBetaLoading(true);
+    try {
+      const tag = hashtag.replace(/^#/, '');
+      const res = await fetch(`${apiUrl}?tag=${encodeURIComponent(tag)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setBetaMedia(data.media || []);
+      }
+    } catch {
+      // API unavailable - silent fail
+    } finally {
+      setBetaLoading(false);
+    }
+  }, []);
+
   const openBetaSheet = (problem: Problem) => {
     setBetaProblem(problem);
+    setBetaMedia([]);
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setSheetVisible(true);
       });
     });
+    fetchBetaMedia(getHashtag(problem));
   };
 
   const closeBetaSheet = () => {
@@ -50,6 +82,7 @@ export default function BoulderDetail({ cragSlug, boulder, problems, allBoulders
     setTimeout(() => {
       setBetaProblem(null);
       setCopied(false);
+      setBetaMedia([]);
     }, 300);
   };
 
@@ -71,30 +104,19 @@ export default function BoulderDetail({ cragSlug, boulder, problems, allBoulders
     return `#${problem.slug.replace(/-/g, '_')}`;
   };
 
-  const getHashtagRaw = (problem: Problem) => {
-    return getHashtag(problem).replace(/^#/, '');
-  };
-
   const getCaption = (problem: Problem) => {
-    return `${problem.title} ${problem.grade}\n${getHashtag(problem)}`;
+    return `"${problem.title}" ${problem.grade} on ${boulder.title}, ${cragTitle}. @granite_climbing #granite_climbing #climbing #bouldering`;
   };
 
   const handleCopyAndOpen = async (problem: Problem) => {
-    const tag = getHashtagRaw(problem);
     try {
       await navigator.clipboard.writeText(getCaption(problem));
       setCopied(true);
       setTimeout(() => {
-        window.open(
-          `https://www.instagram.com/explore/tags/${encodeURIComponent(tag)}/`,
-          '_blank'
-        );
+        window.open('https://www.instagram.com/', '_blank');
       }, 300);
     } catch {
-      window.open(
-        `https://www.instagram.com/explore/tags/${encodeURIComponent(tag)}/`,
-        '_blank'
-      );
+      window.open('https://www.instagram.com/', '_blank');
     }
   };
 
@@ -205,12 +227,11 @@ export default function BoulderDetail({ cragSlug, boulder, problems, allBoulders
 
             <div className={styles.sheetBody}>
               <p className={styles.sheetDescription}>
-                캡션을 복사하여 인스타그램 게시물에 넣어주면 다른 클라이머들이 베타 영상을 쉽게 찾을 수 있습니다.
+                버튼을 눌러 추천 캡션을 복사하고 Instagram을 여세요. Instagram 동영상 게시물을 작성할 때 캡션을 붙여넣을 수 있습니다. 게시물을 찾아 여기로 연결할게요.
               </p>
 
               <div className={styles.captionBox}>
-                <span className={styles.captionLabel}>캡션</span>
-                <span className={styles.captionHashtag}>{getHashtag(betaProblem)}</span>
+                <span className={styles.captionText}>{getCaption(betaProblem)}</span>
               </div>
 
               <button
@@ -222,9 +243,38 @@ export default function BoulderDetail({ cragSlug, boulder, problems, allBoulders
             </div>
 
             <div className={styles.sheetGrid}>
-              {Array.from({ length: 9 }).map((_, i) => (
-                <div key={i} className={styles.gridPlaceholder} />
-              ))}
+              {betaLoading ? (
+                <div className={styles.gridLoading}>
+                  <p>베타 영상을 불러오는 중...</p>
+                </div>
+              ) : betaMedia.length > 0 ? (
+                betaMedia.map((media) => (
+                  <a
+                    key={media.id}
+                    href={media.permalink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.gridItem}
+                  >
+                    <img
+                      src={media.thumbnail_url || media.media_url}
+                      alt="beta video"
+                      className={styles.gridImage}
+                    />
+                    {media.media_type === 'VIDEO' && (
+                      <div className={styles.gridVideoIcon}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                    )}
+                  </a>
+                ))
+              ) : (
+                Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className={styles.gridPlaceholder} />
+                ))
+              )}
             </div>
           </div>
         </div>

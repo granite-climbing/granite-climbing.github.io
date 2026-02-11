@@ -45,6 +45,7 @@ export default async function BoulderDetailPage({ params }: BoulderDetailPagePro
       <main>
         <BoulderDetail
           cragSlug={crag.slug}
+          cragTitle={crag.title}
           boulder={boulder}
           problems={problems}
           allBoulders={allBoulders}
