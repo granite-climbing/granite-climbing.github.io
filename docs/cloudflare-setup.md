@@ -213,6 +213,8 @@ npx wrangler secret put INSTAGRAM_USER_ID
 **참고**: 시크릿 값은 안전하게 암호화되어 저장되며, `wrangler.toml` 파일에는 저장되지 않습니다.
 
 ### 5.2 프론트엔드 환경 변수 설정
+
+#### 로컬 개발 환경
 Next.js 프로젝트의 `.env.local` 파일에 Worker URL을 추가합니다:
 
 ```bash
@@ -224,6 +226,19 @@ echo 'NEXT_PUBLIC_INSTAGRAM_API_URL=https://granite.your-account.workers.dev' >>
 ```
 
 `your-account` 부분을 실제 Cloudflare 계정 이름으로 교체합니다.
+
+#### GitHub Pages 배포 환경
+GitHub Repository Settings에서 Secret을 추가해야 합니다:
+
+1. GitHub 저장소 페이지로 이동
+2. **Settings** > **Secrets and variables** > **Actions** 클릭
+3. **New repository secret** 버튼 클릭
+4. 다음 Secret 추가:
+   - **Name**: `NEXT_PUBLIC_INSTAGRAM_API_URL`
+   - **Value**: `https://granite.your-account.workers.dev` (실제 Worker URL)
+5. **Add secret** 클릭
+
+**참고**: `.github/workflows/deploy.yml` 파일에 이미 환경 변수 설정이 포함되어 있습니다.
 
 ---
 
