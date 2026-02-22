@@ -143,7 +143,7 @@ npx wrangler d1 execute granite --command="SELECT name FROM sqlite_master WHERE 
 
 ### 3.5 테스트 데이터 삽입 (선택사항)
 ```bash
-npx wrangler d1 execute granite --command="INSERT INTO beta_videos (problem_slug, instagram_url, instagram_post_id, submitted_at, status) VALUES ('test-problem', 'https://www.instagram.com/p/ABC123/', 'ABC123', '2025-02-22T10:00:00Z', 'approved')"
+npx wrangler d1 execute granite --command="INSERT INTO beta_videos (problem_slug, instagram_url, instagram_post_id, thumbnail_url, submitted_at, status) VALUES ('test-problem', 'https://www.instagram.com/p/ABC123/', 'ABC123', 'https://example.com/thumbnail.jpg', '2025-02-22T10:00:00Z', 'approved')"
 ```
 
 ### 3.6 데이터 확인

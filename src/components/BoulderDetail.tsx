@@ -47,6 +47,7 @@ interface InstagramMedia {
 interface SubmittedVideo {
   id: number;
   instagramUrl: string;
+  thumbnailUrl?: string;
   submittedAt: string;
 }
 
@@ -444,10 +445,21 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                           rel="noopener noreferrer"
                           className={styles.gridItem}
                         >
-                          <div className={styles.gridPlaceholder}>
-                            <div className={styles.gridVideoIcon}>
-                              <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
+                          {video.thumbnailUrl ? (
+                            <img
+                              src={video.thumbnailUrl}
+                              alt="Beta video"
+                              className={styles.gridImage}
+                            />
+                          ) : (
+                            <div className={styles.gridPlaceholder}>
+                              <div className={styles.gridVideoIcon}>
+                                <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
+                              </div>
                             </div>
+                          )}
+                          <div className={styles.gridVideoIcon}>
+                            <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
                           </div>
                         </a>
                       ))}

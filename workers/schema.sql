@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS beta_videos (
   problem_slug TEXT NOT NULL,
   instagram_url TEXT NOT NULL,
   instagram_post_id TEXT,
+  thumbnail_url TEXT,
   submitted_at TEXT NOT NULL,
   status TEXT DEFAULT 'pending'
 );

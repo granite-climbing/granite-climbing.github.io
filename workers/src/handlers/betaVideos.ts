@@ -8,6 +8,7 @@ import { extractInstagramPostId } from '../utils/validation';
 
 interface Env {
   DB: D1Database;
+  INSTAGRAM_ACCESS_TOKEN?: string;
 }
 
 /**
@@ -29,7 +30,7 @@ export async function handleGetBetaVideos(
   try {
     // Query database for approved videos
     const { results } = await env.DB.prepare(
-      'SELECT id, instagram_url, submitted_at FROM beta_videos WHERE problem_slug = ? AND status = ? ORDER BY submitted_at DESC'
+      'SELECT id, instagram_url, thumbnail_url, submitted_at FROM beta_videos WHERE problem_slug = ? AND status = ? ORDER BY submitted_at DESC'
     ).bind(problemSlug, 'approved').all();
 
     return jsonResponse({ videos: results }, 200, corsHeaders);
@@ -73,13 +74,29 @@ export async function handleSubmitBetaVideo(
       return jsonResponse({ error: 'Video already submitted for this problem' }, 409, corsHeaders);
     }
 
+    // Fetch Instagram post thumbnail using public oEmbed API (no access token required)
+    let thumbnailUrl = null;
+    try {
+      const oembedUrl = `https://graph.instagram.com/instagram_oembed?url=${encodeURIComponent(instagramUrl)}&fields=thumbnail_url`;
+      const oembedResponse = await fetch(oembedUrl);
+
+      if (oembedResponse.ok) {
+        const oembedData = await oembedResponse.json() as { thumbnail_url?: string };
+        thumbnailUrl = oembedData.thumbnail_url || null;
+      }
+    } catch (error) {
+      console.error('Failed to fetch Instagram thumbnail:', error);
+      // Continue without thumbnail - better to save the video link than fail completely
+    }
+
     // Insert into database
     const result = await env.DB.prepare(
-      'INSERT INTO beta_videos (problem_slug, instagram_url, instagram_post_id, submitted_at, status) VALUES (?, ?, ?, ?, ?)'
+      'INSERT INTO beta_videos (problem_slug, instagram_url, instagram_post_id, thumbnail_url, submitted_at, status) VALUES (?, ?, ?, ?, ?, ?)'
     ).bind(
       problemSlug,
       instagramUrl,
       postId,
+      thumbnailUrl,
       new Date().toISOString(),
       'approved'  // Auto-approve for MVP
     ).run();

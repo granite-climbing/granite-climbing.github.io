@@ -11,8 +11,8 @@ Cloudflare Worker providing API endpoints for the Granite climbing app.
 
 2. **Beta Video Management** (`/beta-videos`)
    - `GET /beta-videos?problem=<slug>` - Retrieve submitted videos for a problem
-   - `POST /beta-videos` - Submit new beta video link
-   - Stores data in D1 database
+   - `POST /beta-videos` - Submit new beta video link with automatic thumbnail fetching
+   - Stores data in D1 database with Instagram thumbnails
 
 ## Project Structure
 
