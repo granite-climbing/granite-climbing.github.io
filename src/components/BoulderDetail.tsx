@@ -45,6 +45,8 @@ interface InstagramMedia {
 }
 
 export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithProblems }: BoulderDetailProps) {
+  const [currentTopoIndex, setCurrentTopoIndex] = useState(0);
+  const [selectedProblemForImage, setSelectedProblemForImage] = useState<Problem | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
@@ -52,6 +54,31 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
   const [copiedHashtag, setCopiedHashtag] = useState(false);
   const [instagramMedia, setInstagramMedia] = useState<InstagramMedia[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
+
+  const currentTopo = toposWithProblems[currentTopoIndex];
+  const totalTopos = toposWithProblems.length;
+
+  const handlePrevTopo = () => {
+    if (currentTopoIndex > 0) {
+      setCurrentTopoIndex(currentTopoIndex - 1);
+      setSelectedProblemForImage(null);
+    }
+  };
+
+  const handleNextTopo = () => {
+    if (currentTopoIndex < totalTopos - 1) {
+      setCurrentTopoIndex(currentTopoIndex + 1);
+      setSelectedProblemForImage(null);
+    }
+  };
+
+  const handleProblemClick = (problem: Problem) => {
+    if (selectedProblemForImage?.slug === problem.slug) {
+      setSelectedProblemForImage(null);
+    } else {
+      setSelectedProblemForImage(problem);
+    }
+  };
 
   const handleOpenBeta = async (problem: Problem, topo: TopoWithProblems) => {
     setSelectedProblem(problem);
@@ -123,78 +150,114 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
     };
   }, [sheetOpen]);
 
+  if (toposWithProblems.length === 0) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.navigation}>
+          <a href={`/crag/${cragSlug}`} className={styles.navButton}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </a>
+          <span className={styles.navTitle}>{cragTitle}</span>
+          <div className={styles.navButtonPlaceholder} />
+        </div>
+        <div className={styles.emptyState}>등록된 토포가 없습니다.</div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
-      {/* Boulder Navigation */}
+      {/* Crag Navigation */}
       <div className={styles.navigation}>
         <a href={`/crag/${cragSlug}`} className={styles.navButton}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
         </a>
-        <span className={styles.navTitle}>
-          {boulder.title}
-        </span>
+        <span className={styles.navTitle}>{cragTitle}</span>
         <div className={styles.navButtonPlaceholder} />
       </div>
 
-      {/* Topos and Problems */}
-      {toposWithProblems.length === 0 ? (
-        <div className={styles.emptyState}>등록된 토포가 없습니다.</div>
-      ) : (
-        toposWithProblems.map((topo) => (
-          <div key={topo.slug} className={styles.topoSection}>
-            {/* Topo Image */}
-            <div className={styles.topoImageSection}>
-              <img src={topo.image} alt={topo.title} className={styles.topoImage} />
+      {/* Topo Image or Problem Image */}
+      <div className={styles.imageSection}>
+        <img
+          src={selectedProblemForImage?.image || currentTopo.image}
+          alt={selectedProblemForImage?.title || currentTopo.title}
+          className={styles.topoImage}
+        />
+      </div>
+
+      {/* Boulder and Topo Navigation */}
+      <div className={styles.topoNavigation}>
+        <button
+          onClick={handlePrevTopo}
+          className={styles.navButton}
+          disabled={currentTopoIndex === 0}
+          style={{ visibility: currentTopoIndex === 0 ? 'hidden' : 'visible' }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <div className={styles.topoInfo}>
+          <div className={styles.boulderTitle}>{boulder.title}</div>
+          <div className={styles.topoCounter}>{currentTopo.title} {currentTopoIndex + 1}/{totalTopos}</div>
+        </div>
+        <button
+          onClick={handleNextTopo}
+          className={styles.navButton}
+          disabled={currentTopoIndex === totalTopos - 1}
+          style={{ visibility: currentTopoIndex === totalTopos - 1 ? 'hidden' : 'visible' }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      {/* Problem List for Current Topo */}
+      <div className={styles.problemList}>
+        {currentTopo.problems.length === 0 ? (
+          <div className={styles.emptyState}>등록된 문제가 없습니다.</div>
+        ) : (
+          currentTopo.problems.map((problem, index) => (
+            <div
+              key={problem.slug}
+              className={`${styles.problemItem} ${selectedProblemForImage?.slug === problem.slug ? styles.problemItemActive : ''}`}
+              onClick={() => handleProblemClick(problem)}
+            >
+              <div className={styles.problemNumber}>
+                <div className={styles.numberCircle}>{index + 1}</div>
+              </div>
+
+              <div className={styles.problemInfo}>
+                <div className={styles.problemHeader}>
+                  <h3 className={styles.problemTitle}>{problem.title}</h3>
+                  <span className={styles.problemGrade}>{problem.grade}</span>
+                </div>
+
+                <div className={styles.problemSubInfo}>
+                  {problem.fa && <div className={styles.problemFa}>FA: {problem.fa}</div>}
+                </div>
+
+                <div className={styles.problemMeta}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenBeta(problem, currentTopo);
+                    }}
+                    className={styles.betaButton}
+                  >
+                    <span>▶</span> beta
+                  </button>
+                </div>
+              </div>
             </div>
-
-            {/* Topo Title */}
-            <div className={styles.topoHeader}>
-              <h2 className={styles.topoTitle}>{topo.title}</h2>
-              {topo.description && <p className={styles.topoDescription}>{topo.description}</p>}
-            </div>
-
-            {/* Problem List for this Topo */}
-            <div className={styles.problemList}>
-              {topo.problems.length === 0 ? (
-                <div className={styles.emptyState}>등록된 문제가 없습니다.</div>
-              ) : (
-                topo.problems.map((problem, index) => (
-                  <div key={problem.slug} className={styles.problemItem}>
-                    <div className={styles.problemNumber}>
-                      <div className={styles.numberCircle}>{index + 1}</div>
-                    </div>
-
-                    <div className={styles.problemInfo}>
-                      <div className={styles.problemHeader}>
-                        <h3 className={styles.problemTitle}>{problem.title}</h3>
-                        <span className={styles.problemGrade}>{problem.grade}</span>
-                      </div>
-
-                      <div className={styles.problemSubInfo}>
-                        {problem.fa && <div className={styles.problemFa}>FA: {problem.fa}</div>}
-                      </div>
-
-                      {problem.image && (
-                        <div className={styles.problemImageContainer}>
-                          <img src={problem.image} alt={problem.title} className={styles.problemImage} />
-                        </div>
-                      )}
-
-                      <div className={styles.problemMeta}>
-                        <button onClick={() => handleOpenBeta(problem, topo)} className={styles.betaButton}>
-                          <span>▶</span> beta
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        ))
-      )}
+          ))
+        )}
+      </div>
 
       {/* Beta Bottom Sheet */}
       {sheetOpen && selectedProblem && selectedTopo && (

@@ -67,12 +67,8 @@
   color: #333;
 }
 
-/* Topo Section */
-.topoSection {
-  margin-bottom: 40px;
-}
-
-.topoImageSection {
+/* Image Section */
+.imageSection {
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
@@ -85,23 +81,32 @@
   object-fit: cover;
 }
 
-.topoHeader {
+/* Topo Navigation */
+.topoNavigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 16px;
   border-bottom: 1px solid #eee;
 }
 
-.topoTitle {
-  margin: 0 0 8px 0;
-  font-size: 1.2rem;
+.topoInfo {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.boulderTitle {
+  font-size: 1.1rem;
   font-weight: 600;
   color: #333;
 }
 
-.topoDescription {
-  margin: 0;
-  font-size: 0.9rem;
+.topoCounter {
+  font-size: 0.85rem;
   color: #666;
-  line-height: 1.5;
 }
 
 /* Problem List */
@@ -135,10 +140,20 @@
   padding: 20px 0;
   border-bottom: 1px solid #f0f0f0;
   align-items: flex-start;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.problemItem:hover {
+  background-color: #f9f9f9;
 }
 
 .problemItem:last-child {
   border-bottom: none;
+}
+
+.problemItemActive {
+  background-color: #f0f0f0;
 }
 
 .problemNumber {
