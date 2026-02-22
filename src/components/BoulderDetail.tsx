@@ -20,6 +20,7 @@ interface Problem {
   fa: string;
   image?: string;
   description?: string;
+  index?: number;
 }
 
 interface TopoWithProblems {
@@ -359,7 +360,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
               onClick={() => handleProblemClick(problem)}
             >
               <div className={styles.problemNumber}>
-                <div className={styles.numberCircle}>{index + 1}</div>
+                <div className={styles.numberCircle}>{problem.index ?? index + 1}</div>
               </div>
 
               <div className={styles.problemInfo}>

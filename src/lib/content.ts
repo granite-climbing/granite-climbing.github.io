@@ -81,6 +81,7 @@ function getAllProblems() {
       fa: data.fa || '',
       image: data.image ? getAssetPath(data.image) : undefined,
       description: data.description || '',
+      index: data.index,
     };
   });
 }

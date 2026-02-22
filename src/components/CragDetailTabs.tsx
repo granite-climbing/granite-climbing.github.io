@@ -42,6 +42,7 @@ interface Problem {
   topoTitle: string;
   boulderSlug: string;
   boulderTitle: string;
+  index?: number;
 }
 
 interface CultureItem {
