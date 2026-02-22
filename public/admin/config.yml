@@ -172,6 +172,7 @@ collections:
           - { label: "V14", value: "V14" }
           - { label: "V15", value: "V15" }
           - { label: "V16", value: "V16" }
+      - { label: "문제 번호 (Index)", name: index, widget: number, required: false, value_type: "int", min: 1, hint: "토포 내에서 문제의 순서 번호 (1부터 시작). 입력하지 않으면 자동으로 순서대로 번호가 부여됩니다." }
       - { label: 해시태그, name: hashtag, widget: string, required: false, hint: "베타 영상 검색용 인스타그램 해시태그 (예: granite_울산천_시작의길)" }
       - { label: "FA (초등자 인스타 ID)", name: fa, widget: string, required: false, hint: "초등자 인스타그램 ID (예: @yeochan6409)" }
       - { label: 문제 이미지, name: image, widget: image, required: false, hint: "문제 이미지는 선택사항입니다" }
