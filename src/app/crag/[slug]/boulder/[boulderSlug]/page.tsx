@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation';
-import Header from '@/components/Header';
 import BoulderDetail from '@/components/BoulderDetail';
 import Footer from '@/components/Footer';
 import { getAllCrags, getCragBySlug, getBouldersByCrag, getBoulderBySlug, getToposByBoulder, getProblemsByTopo } from '@/lib/content';
@@ -46,7 +45,6 @@ export default async function BoulderDetailPage({ params }: BoulderDetailPagePro
 
   return (
     <>
-      <Header />
       <main>
         <BoulderDetail
           cragSlug={crag.slug}
