@@ -30,6 +30,31 @@ function getAllBoulders() {
   });
 }
 
+// 모든 Topo 가져오기 (flat 구조)
+function getAllTopos() {
+  const toposDir = path.join(contentDirectory, 'topos');
+
+  if (!fs.existsSync(toposDir)) {
+    return [];
+  }
+
+  const files = fs.readdirSync(toposDir).filter((f) => f.endsWith('.md'));
+
+  return files.map((fileName) => {
+    const filePath = path.join(toposDir, fileName);
+    const fileContents = fs.readFileSync(filePath, 'utf8');
+    const { data } = matter(fileContents);
+
+    return {
+      slug: data.slug || fileName.replace(/\.md$/, ''),
+      boulder: data.boulder || '',
+      title: data.title || '',
+      image: getAssetPath(data.image || ''),
+      description: data.description || '',
+    };
+  });
+}
+
 // 모든 Problem 가져오기 (flat 구조)
 function getAllProblems() {
   const problemsDir = path.join(contentDirectory, 'problems');
@@ -47,24 +72,28 @@ function getAllProblems() {
 
     return {
       slug: data.slug || fileName.replace(/\.md$/, ''),
-      boulder: data.boulder || '',
+      topo: data.topo || '',
       title: data.title || '',
       grade: data.grade || 'V0',
       hashtag: data.hashtag || '',
       fa: data.fa || '',
+      image: data.image ? getAssetPath(data.image) : undefined,
       description: data.description || '',
     };
   });
 }
 
-// Boulder와 Problem 개수 계산 헬퍼 함수 (relation 기반)
+// Boulder와 Problem 개수 계산 헬퍼 함수 (relation 기반 - Topo를 통해)
 function getCragCounts(cragSlug: string): { boulderCount: number; problemCount: number } {
   const allBoulders = getAllBoulders();
+  const allTopos = getAllTopos();
   const allProblems = getAllProblems();
 
   const cragBoulders = allBoulders.filter((b) => b.crag === cragSlug);
   const cragBoulderSlugs = cragBoulders.map((b) => b.slug);
-  const cragProblems = allProblems.filter((p) => cragBoulderSlugs.includes(p.boulder));
+  const cragTopos = allTopos.filter((t) => cragBoulderSlugs.includes(t.boulder));
+  const cragTopoSlugs = cragTopos.map((t) => t.slug);
+  const cragProblems = allProblems.filter((p) => cragTopoSlugs.includes(p.topo));
 
   return {
     boulderCount: cragBoulders.length,
@@ -262,15 +291,18 @@ export function getBoulderBySlug(boulderSlug: string) {
   return allBoulders.find((b) => b.slug === boulderSlug) || null;
 }
 
-// Crag의 Boulder 목록 가져오기
+// Crag의 Boulder 목록 가져오기 (Topo를 통한 Problem 개수 계산)
 export function getBouldersByCrag(cragSlug: string) {
   const allBoulders = getAllBoulders();
+  const allTopos = getAllTopos();
   const allProblems = getAllProblems();
 
   const cragBoulders = allBoulders.filter((b) => b.crag === cragSlug);
 
   return cragBoulders.map((boulder) => {
-    const problemCount = allProblems.filter((p) => p.boulder === boulder.slug).length;
+    const boulderTopos = allTopos.filter((t) => t.boulder === boulder.slug);
+    const boulderTopoSlugs = boulderTopos.map((t) => t.slug);
+    const problemCount = allProblems.filter((p) => boulderTopoSlugs.includes(p.topo)).length;
 
     return {
       slug: boulder.slug,
@@ -282,42 +314,102 @@ export function getBouldersByCrag(cragSlug: string) {
   });
 }
 
-// Boulder의 Problem 목록 가져오기
-export function getProblemsByBoulder(boulderSlug: string) {
+// Topo의 Problem 목록 가져오기
+export function getProblemsByTopo(topoSlug: string) {
   const allProblems = getAllProblems();
 
   return allProblems
-    .filter((p) => p.boulder === boulderSlug)
+    .filter((p) => p.topo === topoSlug)
     .map((problem) => ({
       slug: problem.slug,
       title: problem.title,
       grade: problem.grade,
       hashtag: problem.hashtag,
       fa: problem.fa,
+      image: problem.image,
       description: problem.description,
     }));
 }
 
-// Crag의 모든 Problem 목록 가져오기 (Route 탭용)
+// Crag의 모든 Problem 목록 가져오기 (Route 탭용 - Topo 정보 포함)
 export function getAllProblemsByCrag(cragSlug: string) {
   const allBoulders = getAllBoulders();
+  const allTopos = getAllTopos();
   const allProblems = getAllProblems();
 
   const cragBoulders = allBoulders.filter((b) => b.crag === cragSlug);
   const cragBoulderSlugs = cragBoulders.map((b) => b.slug);
+  const cragTopos = allTopos.filter((t) => cragBoulderSlugs.includes(t.boulder));
+  const cragTopoSlugs = cragTopos.map((t) => t.slug);
 
   return allProblems
-    .filter((p) => cragBoulderSlugs.includes(p.boulder))
+    .filter((p) => cragTopoSlugs.includes(p.topo))
     .map((problem) => {
-      const boulder = cragBoulders.find((b) => b.slug === problem.boulder);
+      const topo = cragTopos.find((t) => t.slug === problem.topo);
+      const boulder = cragBoulders.find((b) => b.slug === topo?.boulder);
 
       return {
         slug: problem.slug,
         title: problem.title,
         grade: problem.grade,
         description: problem.description,
-        boulderSlug: problem.boulder,
-        boulderTitle: boulder?.title || problem.boulder,
+        topoSlug: problem.topo,
+        topoTitle: topo?.title || problem.topo,
+        boulderSlug: topo?.boulder || '',
+        boulderTitle: boulder?.title || topo?.boulder || '',
+      };
+    });
+}
+
+// 단일 Topo 상세 정보 가져오기
+export function getTopoBySlug(topoSlug: string) {
+  const allTopos = getAllTopos();
+  return allTopos.find((t) => t.slug === topoSlug) || null;
+}
+
+// Boulder의 Topo 목록 가져오기 (Problem 개수 포함)
+export function getToposByBoulder(boulderSlug: string) {
+  const allTopos = getAllTopos();
+  const allProblems = getAllProblems();
+
+  const boulderTopos = allTopos.filter((t) => t.boulder === boulderSlug);
+
+  return boulderTopos.map((topo) => {
+    const problemCount = allProblems.filter((p) => p.topo === topo.slug).length;
+
+    return {
+      slug: topo.slug,
+      title: topo.title,
+      image: topo.image,
+      description: topo.description,
+      problemCount,
+    };
+  });
+}
+
+// Boulder의 모든 Problem 목록 가져오기 (Topo를 통해)
+export function getAllProblemsByBoulder(boulderSlug: string) {
+  const allTopos = getAllTopos();
+  const allProblems = getAllProblems();
+
+  const boulderTopos = allTopos.filter((t) => t.boulder === boulderSlug);
+  const boulderTopoSlugs = boulderTopos.map((t) => t.slug);
+
+  return allProblems
+    .filter((p) => boulderTopoSlugs.includes(p.topo))
+    .map((problem) => {
+      const topo = boulderTopos.find((t) => t.slug === problem.topo);
+
+      return {
+        slug: problem.slug,
+        title: problem.title,
+        grade: problem.grade,
+        hashtag: problem.hashtag,
+        fa: problem.fa,
+        image: problem.image,
+        description: problem.description,
+        topoSlug: problem.topo,
+        topoTitle: topo?.title || problem.topo,
       };
     });
 }

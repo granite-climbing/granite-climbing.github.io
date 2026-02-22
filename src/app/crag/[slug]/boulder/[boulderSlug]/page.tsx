@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import Header from '@/components/Header';
 import BoulderDetail from '@/components/BoulderDetail';
 import Footer from '@/components/Footer';
-import { getAllCrags, getCragBySlug, getBouldersByCrag, getBoulderBySlug, getProblemsByBoulder } from '@/lib/content';
+import { getAllCrags, getCragBySlug, getBouldersByCrag, getBoulderBySlug, getToposByBoulder } from '@/lib/content';
 
 interface BoulderDetailPageProps {
   params: { slug: string; boulderSlug: string };
@@ -37,7 +37,7 @@ export default async function BoulderDetailPage({ params }: BoulderDetailPagePro
   }
 
   const allBoulders = getBouldersByCrag(params.slug);
-  const problems = getProblemsByBoulder(params.boulderSlug);
+  const topos = getToposByBoulder(params.boulderSlug);
 
   return (
     <>
@@ -47,7 +47,7 @@ export default async function BoulderDetailPage({ params }: BoulderDetailPagePro
           cragSlug={crag.slug}
           cragTitle={crag.title}
           boulder={boulder}
-          problems={problems}
+          topos={topos}
           allBoulders={allBoulders}
         />
       </main>

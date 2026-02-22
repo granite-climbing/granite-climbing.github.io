@@ -111,25 +111,17 @@ collections:
         value_field: slug
         display_fields: [title]
       - { label: 이름, name: title, widget: string }
-      - { label: 썸네일 이미지, name: thumbnail, widget: image }
+      - { label: 썸네일 이미지, name: thumbnail, widget: image, required: false }
       - { label: 설명, name: description, widget: text, required: false }
 
-  # 1-2. Problem (문제) - Boulder 하위
-  - name: problems
-    label: Problem (문제)
-    folder: content/problems
+  # 1-2. Topo (토포) - Boulder 하위
+  - name: topos
+    label: Topo (토포)
+    folder: content/topos
     create: true
     slug: "{{slug}}"
     fields:
       - { label: Slug, name: slug, widget: string }
-      - label: 소속 암장 (Crag) - 참고용
-        name: crag
-        widget: relation
-        collection: crags
-        search_fields: [title]
-        value_field: slug
-        display_fields: [title]
-        hint: "먼저 암장을 선택하면 아래에서 해당 암장의 볼더를 찾기 쉽습니다"
       - label: 소속 볼더 (Boulder)
         name: boulder
         widget: relation
@@ -137,6 +129,26 @@ collections:
         search_fields: [title, crag]
         value_field: slug
         display_fields: [title, crag]
+      - { label: 이름, name: title, widget: string }
+      - { label: 토포 이미지, name: image, widget: image, required: true, hint: "토포 이미지는 필수입니다" }
+      - { label: 설명, name: description, widget: text, required: false }
+
+  # 1-3. Problem (문제) - Topo 하위
+  - name: problems
+    label: Problem (문제)
+    folder: content/problems
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: Slug, name: slug, widget: string }
+      - label: 소속 토포 (Topo)
+        name: topo
+        widget: relation
+        collection: topos
+        search_fields: [title, boulder]
+        value_field: slug
+        display_fields: [title, boulder]
+        hint: "문제가 속한 토포를 선택하세요"
       - { label: 이름, name: title, widget: string }
       - label: 난이도
         name: grade
@@ -162,6 +174,7 @@ collections:
           - { label: "V16", value: "V16" }
       - { label: 해시태그, name: hashtag, widget: string, required: false, hint: "베타 영상 검색용 인스타그램 해시태그 (예: granite_울산천_시작의길)" }
       - { label: "FA (초등자 인스타 ID)", name: fa, widget: string, required: false, hint: "초등자 인스타그램 ID (예: @yeochan6409)" }
+      - { label: 문제 이미지, name: image, widget: image, required: false, hint: "문제 이미지는 선택사항입니다" }
       - { label: 설명, name: description, widget: text, required: false }
 
   # 2. Culture > Trable (여행기)

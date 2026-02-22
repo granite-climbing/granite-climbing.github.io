@@ -36,6 +36,8 @@ interface Problem {
   title: string;
   grade: string;
   description: string;
+  topoSlug: string;
+  topoTitle: string;
   boulderSlug: string;
   boulderTitle: string;
 }
@@ -324,16 +326,16 @@ function RouteTab({ crag, problems }: { crag: Crag; problems: Problem[] }) {
             Grade
             {sortBy === 'grade' && <span className={styles.sortArrow}>▼</span>}
           </button>
-          <div className={`${styles.routeHeaderCell} ${styles.boulderColumn}`}>
-            Boulder
+          <div className={`${styles.routeHeaderCell} ${styles.topoColumn}`}>
+            Topo
           </div>
         </div>
 
         <div className={styles.routeList}>
           {sortedProblems.map((problem, index) => (
             <a
-              href={`/crag/${crag.slug}/boulder/${problem.boulderSlug}#${problem.slug}`}
-              key={`${problem.boulderSlug}-${problem.slug}-${index}`}
+              href={`/crag/${crag.slug}/boulder/${problem.boulderSlug}/topo/${problem.topoSlug}`}
+              key={`${problem.topoSlug}-${problem.slug}-${index}`}
               className={styles.routeRow}
             >
               <div className={`${styles.routeCell} ${styles.routeColumn}`}>
@@ -342,8 +344,8 @@ function RouteTab({ crag, problems }: { crag: Crag; problems: Problem[] }) {
               <div className={`${styles.routeCell} ${styles.gradeColumn}`}>
                 {problem.grade}
               </div>
-              <div className={`${styles.routeCell} ${styles.boulderColumn}`}>
-                {problem.boulderTitle}
+              <div className={`${styles.routeCell} ${styles.topoColumn}`}>
+                {problem.topoTitle}
               </div>
             </a>
           ))}
