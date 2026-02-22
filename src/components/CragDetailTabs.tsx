@@ -360,8 +360,8 @@ function RouteTab({ crag, problems, selectedBoulder }: { crag: Crag; problems: P
             Grade
             {sortBy === 'grade' && <span className={styles.sortArrow}>▼</span>}
           </button>
-          <div className={`${styles.routeHeaderCell} ${styles.topoColumn}`}>
-            Topo
+          <div className={`${styles.routeHeaderCell} ${styles.boulderColumn}`}>
+            Boulder
           </div>
         </div>
 
@@ -378,8 +378,8 @@ function RouteTab({ crag, problems, selectedBoulder }: { crag: Crag; problems: P
               <div className={`${styles.routeCell} ${styles.gradeColumn}`}>
                 {problem.grade}
               </div>
-              <div className={`${styles.routeCell} ${styles.topoColumn}`}>
-                {problem.topoTitle}
+              <div className={`${styles.routeCell} ${styles.boulderColumn}`}>
+                {problem.boulderTitle}
               </div>
             </a>
           ))}
