@@ -43,10 +43,10 @@ npm --version
 ```
 
 ### 2.2 Wrangler 설치
-프로젝트의 instagram-proxy 디렉토리로 이동하여 의존성을 설치합니다:
+프로젝트의 workers 디렉토리로 이동하여 의존성을 설치합니다:
 
 ```bash
-cd workers/instagram-proxy
+cd workers
 npm install
 ```
 
@@ -92,7 +92,7 @@ database_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 **중요**: `database_id` 값을 복사해둡니다. 이 값은 `wrangler.toml` 파일에 추가해야 합니다.
 
 ### 3.2 wrangler.toml 업데이트
-`workers/instagram-proxy/wrangler.toml` 파일을 엽니다:
+`workers/wrangler.toml` 파일을 엽니다:
 
 ```toml
 name = "granite-instagram-proxy"
@@ -159,7 +159,7 @@ npx wrangler d1 execute granite-beta-videos --command="SELECT * FROM beta_videos
 배포하기 전에 로컬에서 Worker를 테스트할 수 있습니다:
 
 ```bash
-npx wrangler dev
+npm run dev
 ```
 
 이제 `http://localhost:8787`에서 Worker를 테스트할 수 있습니다.
@@ -179,7 +179,7 @@ curl -X POST http://localhost:8787/beta-videos \
 
 ### 4.2 프로덕션 배포
 ```bash
-npx wrangler deploy
+npm run deploy
 ```
 
 **성공 메시지**:
@@ -364,12 +364,31 @@ npx wrangler d1 execute granite-beta-videos --command="SELECT * FROM beta_videos
 ### 7.6 Worker 로그 확인
 실시간 로그 모니터링:
 ```bash
+cd workers
 npx wrangler tail
 ```
 
 특정 배포의 로그 확인:
 ```bash
 npx wrangler tail --deployment-id=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
+### 7.7 프로젝트 구조 참고
+Worker 코드는 다음과 같이 구성되어 있습니다:
+
+```
+workers/
+├── src/
+│   ├── index.ts              # 메인 라우터
+│   ├── handlers/
+│   │   ├── hashtag.ts        # Instagram 해시태그 검색
+│   │   └── betaVideos.ts     # 베타 영상 관리
+│   └── utils/
+│       ├── response.ts       # HTTP 응답 유틸리티
+│       └── validation.ts     # 입력 검증 유틸리티
+├── schema.sql                # D1 데이터베이스 스키마
+├── wrangler.toml             # Cloudflare 설정
+└── package.json              # 의존성
 ```
 
 ---
