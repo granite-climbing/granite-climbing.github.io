@@ -95,7 +95,7 @@ database_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 `workers/wrangler.toml` 파일을 엽니다:
 
 ```toml
-name = "granite-instagram-proxy"
+name = "granite"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
@@ -185,13 +185,13 @@ npm run deploy
 **성공 메시지**:
 ```
 Total Upload: xx.xx KiB / gzip: xx.xx KiB
-Uploaded granite-instagram-proxy (x.xx sec)
-Published granite-instagram-proxy (x.xx sec)
-  https://granite-instagram-proxy.your-account.workers.dev
+Uploaded granite (x.xx sec)
+Published granite (x.xx sec)
+  https://granite.your-account.workers.dev
 Current Deployment ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
-**중요**: 출력된 Worker URL(`https://granite-instagram-proxy.your-account.workers.dev`)을 복사해둡니다.
+**중요**: 출력된 Worker URL(`https://granite.your-account.workers.dev`)을 복사해둡니다.
 
 ---
 
@@ -220,7 +220,7 @@ Next.js 프로젝트의 `.env.local` 파일에 Worker URL을 추가합니다:
 cd ../..
 
 # .env.local 파일 편집
-echo 'NEXT_PUBLIC_INSTAGRAM_API_URL=https://granite-instagram-proxy.your-account.workers.dev' >> .env.local
+echo 'NEXT_PUBLIC_INSTAGRAM_API_URL=https://granite.your-account.workers.dev' >> .env.local
 ```
 
 `your-account` 부분을 실제 Cloudflare 계정 이름으로 교체합니다.
@@ -233,7 +233,7 @@ echo 'NEXT_PUBLIC_INSTAGRAM_API_URL=https://granite-instagram-proxy.your-account
 
 **베타 영상 조회 테스트**:
 ```bash
-curl "https://granite-instagram-proxy.your-account.workers.dev/beta-videos?problem=test-problem"
+curl "https://granite.your-account.workers.dev/beta-videos?problem=test-problem"
 ```
 
 **예상 응답**:
@@ -251,7 +251,7 @@ curl "https://granite-instagram-proxy.your-account.workers.dev/beta-videos?probl
 
 **베타 영상 제출 테스트**:
 ```bash
-curl -X POST https://granite-instagram-proxy.your-account.workers.dev/beta-videos \
+curl -X POST https://granite.your-account.workers.dev/beta-videos \
   -H "Content-Type: application/json" \
   -d '{
     "problemSlug": "test-problem-2",
@@ -269,7 +269,7 @@ curl -X POST https://granite-instagram-proxy.your-account.workers.dev/beta-video
 
 **해시태그 검색 테스트** (기존 기능 확인):
 ```bash
-curl "https://granite-instagram-proxy.your-account.workers.dev/?hashtag=climbing"
+curl "https://granite.your-account.workers.dev/?hashtag=climbing"
 ```
 
 ### 6.2 프론트엔드 통합 테스트
