@@ -1,0 +1,103 @@
+.main {
+  min-height: calc(100vh - 200px);
+  padding: 2rem 1rem;
+  background-color: #f5f5f5;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: white;
+  padding: 3rem 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.container h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #1a1a1a;
+  border-bottom: 3px solid #333;
+  padding-bottom: 1rem;
+}
+
+.effectiveDate {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+}
+
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.section h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #444;
+}
+
+.section p {
+  line-height: 1.8;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+.section ul {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.section li {
+  line-height: 1.8;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+
+.section li strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.contact {
+  background-color: #f9f9f9;
+  padding: 1.5rem;
+  border-radius: 6px;
+  border-left: 4px solid #333;
+}
+
+.contact p {
+  margin-bottom: 0.5rem;
+}
+
+.contact strong {
+  color: #333;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 2rem 1.5rem;
+  }
+
+  .container h1 {
+    font-size: 1.6rem;
+  }
+
+  .section h2 {
+    font-size: 1.2rem;
+  }
+
+  .main {
+    padding: 1rem 0.5rem;
+  }
+}

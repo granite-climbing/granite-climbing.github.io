@@ -7,6 +7,7 @@ export default function Footer() {
         <div className={styles.links}>
           <a href="/terms">이용약관</a>
           <a href="/privacy">개인정보처리방침</a>
+          <a href="/data-deletion">데이터 삭제</a>
         </div>
         <a
           href="https://instagram.com"

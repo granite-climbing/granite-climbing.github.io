@@ -1,0 +1,311 @@
+.main {
+  min-height: calc(100vh - 200px);
+  padding: 2rem 1rem;
+  background-color: #f5f5f5;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: white;
+  padding: 3rem 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.container h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #1a1a1a;
+  border-bottom: 3px solid #333;
+  padding-bottom: 1rem;
+}
+
+.intro {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #444;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  border-left: 4px solid #333;
+}
+
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.section h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.section h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #444;
+  margin-top: 1.5rem;
+}
+
+.section p {
+  line-height: 1.8;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+.section ul {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.section li {
+  line-height: 1.8;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+
+.section li strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.steps {
+  margin-left: 1.5rem;
+  counter-reset: step-counter;
+  list-style: none;
+}
+
+.steps li {
+  counter-increment: step-counter;
+  position: relative;
+  padding-left: 2rem;
+  margin-bottom: 1rem;
+  line-height: 1.8;
+  color: #555;
+}
+
+.steps li::before {
+  content: counter(step-counter);
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-color: #333;
+  color: white;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.notice {
+  background-color: #fffbea;
+  border-left: 4px solid #f59e0b;
+  padding: 1rem 1.5rem;
+  margin-top: 1rem;
+  border-radius: 4px;
+}
+
+.notice p {
+  margin: 0;
+  color: #92400e;
+}
+
+.emailBox {
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 1.5rem;
+  border-radius: 6px;
+  margin: 1rem 0;
+}
+
+.emailBox p {
+  margin-bottom: 0.5rem;
+}
+
+.emailBox strong {
+  color: #0c4a6e;
+}
+
+.emailBox ul {
+  margin-top: 0.5rem;
+  margin-left: 1.5rem;
+}
+
+.timeline {
+  margin: 1.5rem 0;
+}
+
+.timelineItem {
+  display: flex;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.timelineItem::before {
+  content: '';
+  position: absolute;
+  left: 60px;
+  top: 30px;
+  bottom: -15px;
+  width: 2px;
+  background-color: #e5e7eb;
+}
+
+.timelineItem:last-child::before {
+  display: none;
+}
+
+.timelineLabel {
+  width: 80px;
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.timelineContent {
+  flex: 1;
+  padding-left: 1.5rem;
+}
+
+.timelineContent strong {
+  display: block;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.timelineContent p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.timelineNote {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #666;
+  font-style: italic;
+}
+
+.warningBox {
+  background-color: #fef2f2;
+  border: 2px solid #fecaca;
+  padding: 1.5rem;
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
+.warningBox h3 {
+  color: #991b1b;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.warningBox ul {
+  margin-left: 1.5rem;
+}
+
+.warningBox li {
+  color: #7f1d1d;
+  margin-bottom: 0.75rem;
+}
+
+.warningBox strong {
+  color: #991b1b;
+}
+
+.contactBox {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 2rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.contactItem {
+  margin-bottom: 1.5rem;
+}
+
+.contactItem:last-child {
+  margin-bottom: 0;
+}
+
+.contactItem strong {
+  display: block;
+  color: #333;
+  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
+}
+
+.contactItem p {
+  margin: 0.25rem 0;
+  color: #555;
+}
+
+.smallText {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.finalNote {
+  background-color: #f0fdf4;
+  border-left: 4px solid #22c55e;
+  padding: 1.5rem;
+  border-radius: 6px;
+}
+
+.finalNote p {
+  margin: 0;
+  color: #166534;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 2rem 1.5rem;
+  }
+
+  .container h1 {
+    font-size: 1.6rem;
+  }
+
+  .section h2 {
+    font-size: 1.2rem;
+  }
+
+  .main {
+    padding: 1rem 0.5rem;
+  }
+
+  .timelineItem {
+    flex-direction: column;
+  }
+
+  .timelineItem::before {
+    left: 10px;
+    top: 25px;
+  }
+
+  .timelineLabel {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .timelineContent {
+    padding-left: 0;
+  }
+
+  .steps li {
+    padding-left: 2.5rem;
+  }
+}
