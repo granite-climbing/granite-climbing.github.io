@@ -5,9 +5,9 @@ compatibility_date = "2024-12-01"
 [vars]
 ALLOWED_ORIGIN = "https://granite-climbing.github.io"
 
-# D1 database binding for beta videos
-# NOTE: Replace database_id with actual ID from: wrangler d1 create granite-beta-videos
+# D1 database binding
+# NOTE: Replace database_id with actual ID from: wrangler d1 create granite
 [[d1_databases]]
 binding = "DB"
-database_name = "granite-beta-videos"
+database_name = "granite"
 database_id = "PLACEHOLDER_DATABASE_ID"  # Replace with actual database ID after creation

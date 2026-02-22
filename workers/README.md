@@ -45,14 +45,14 @@ See [docs/cloudflare-setup.md](../docs/cloudflare-setup.md) for detailed setup i
 
 2. Create D1 database:
    ```bash
-   npx wrangler d1 create granite-beta-videos
+   npx wrangler d1 create granite
    ```
 
 3. Update `wrangler.toml` with database ID
 
 4. Apply schema:
    ```bash
-   npx wrangler d1 execute granite-beta-videos --file=./schema.sql
+   npx wrangler d1 execute granite --file=./schema.sql
    ```
 
 5. Set secrets:

@@ -76,16 +76,16 @@ D1은 Cloudflare의 서버리스 SQLite 데이터베이스입니다.
 
 ### 3.1 데이터베이스 생성
 ```bash
-npx wrangler d1 create granite-beta-videos
+npx wrangler d1 create granite
 ```
 
 **출력 예시**:
 ```
-✅ Successfully created DB 'granite-beta-videos'
+✅ Successfully created DB 'granite'
 
 [[d1_databases]]
 binding = "DB"
-database_name = "granite-beta-videos"
+database_name = "granite"
 database_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 ```
 
@@ -105,7 +105,7 @@ ALLOWED_ORIGIN = "https://granite-climbing.github.io"
 # D1 database binding for beta videos
 [[d1_databases]]
 binding = "DB"
-database_name = "granite-beta-videos"
+database_name = "granite"
 database_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"  # 여기에 실제 database_id 입력
 ```
 
@@ -115,19 +115,19 @@ database_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"  # 여기에 실제 databas
 `schema.sql` 파일을 사용하여 테이블을 생성합니다:
 
 ```bash
-npx wrangler d1 execute granite-beta-videos --file=./schema.sql
+npx wrangler d1 execute granite --file=./schema.sql
 ```
 
 **성공 메시지**:
 ```
-🌀 Executing on granite-beta-videos (a1b2c3d4-e5f6-7890-abcd-ef1234567890):
+🌀 Executing on granite (a1b2c3d4-e5f6-7890-abcd-ef1234567890):
 🌀 To execute on your local development database, use --local
 🚣 Executed 4 commands in 0.5s
 ```
 
 ### 3.4 테이블 생성 확인
 ```bash
-npx wrangler d1 execute granite-beta-videos --command="SELECT name FROM sqlite_master WHERE type='table'"
+npx wrangler d1 execute granite --command="SELECT name FROM sqlite_master WHERE type='table'"
 ```
 
 **출력**:
@@ -143,12 +143,12 @@ npx wrangler d1 execute granite-beta-videos --command="SELECT name FROM sqlite_m
 
 ### 3.5 테스트 데이터 삽입 (선택사항)
 ```bash
-npx wrangler d1 execute granite-beta-videos --command="INSERT INTO beta_videos (problem_slug, instagram_url, instagram_post_id, submitted_at, status) VALUES ('test-problem', 'https://www.instagram.com/p/ABC123/', 'ABC123', '2025-02-22T10:00:00Z', 'approved')"
+npx wrangler d1 execute granite --command="INSERT INTO beta_videos (problem_slug, instagram_url, instagram_post_id, submitted_at, status) VALUES ('test-problem', 'https://www.instagram.com/p/ABC123/', 'ABC123', '2025-02-22T10:00:00Z', 'approved')"
 ```
 
 ### 3.6 데이터 확인
 ```bash
-npx wrangler d1 execute granite-beta-videos --command="SELECT * FROM beta_videos"
+npx wrangler d1 execute granite --command="SELECT * FROM beta_videos"
 ```
 
 ---
@@ -293,7 +293,7 @@ curl "https://granite-instagram-proxy.your-account.workers.dev/?hashtag=climbing
 ### 6.3 데이터베이스 확인
 ```bash
 cd workers/instagram-proxy
-npx wrangler d1 execute granite-beta-videos --command="SELECT * FROM beta_videos ORDER BY submitted_at DESC LIMIT 10"
+npx wrangler d1 execute granite --command="SELECT * FROM beta_videos ORDER BY submitted_at DESC LIMIT 10"
 ```
 
 ---
@@ -347,7 +347,7 @@ npx wrangler d1 execute granite-beta-videos --command="SELECT * FROM beta_videos
 
 중복 데이터 확인:
 ```bash
-npx wrangler d1 execute granite-beta-videos --command="SELECT * FROM beta_videos WHERE problem_slug='problem-slug' AND instagram_post_id='ABC123'"
+npx wrangler d1 execute granite --command="SELECT * FROM beta_videos WHERE problem_slug='problem-slug' AND instagram_post_id='ABC123'"
 ```
 
 ### 7.5 환경 변수가 로드되지 않음
