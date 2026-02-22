@@ -256,35 +256,24 @@ function BoulderTab({ crag, boulders, onBoulderClick }: { crag: Crag; boulders: 
     <div className={styles.boulderTab}>
       <div className={styles.boulderList}>
         {boulders.map((boulder) => (
-          <div key={boulder.slug} className={styles.boulderCard}>
-            <a
-              href={`/crag/${crag.slug}/boulder/${boulder.slug}`}
-              className={styles.boulderCardLink}
-            >
-              <div className={styles.boulderImage}>
-                {boulder.thumbnail ? (
-                  <img src={boulder.thumbnail} alt={boulder.title} />
-                ) : (
-                  <div className={styles.boulderImagePlaceholder} />
-                )}
-              </div>
-              <div className={styles.boulderInfo}>
-                <h3 className={styles.boulderTitle}>{boulder.title}</h3>
-                <p className={styles.boulderMeta}>
-                  {boulder.problemCount} problems · {crag.difficultyMin}-{crag.difficultyMax}
-                </p>
-              </div>
-            </a>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onBoulderClick(boulder.slug);
-              }}
-              className={styles.viewRoutesButton}
-            >
-              View Routes
-            </button>
+          <div
+            key={boulder.slug}
+            className={styles.boulderCard}
+            onClick={() => onBoulderClick(boulder.slug)}
+          >
+            <div className={styles.boulderImage}>
+              {boulder.thumbnail ? (
+                <img src={boulder.thumbnail} alt={boulder.title} />
+              ) : (
+                <div className={styles.boulderImagePlaceholder} />
+              )}
+            </div>
+            <div className={styles.boulderInfo}>
+              <h3 className={styles.boulderTitle}>{boulder.title}</h3>
+              <p className={styles.boulderMeta}>
+                {boulder.problemCount} problems · {crag.difficultyMin}-{crag.difficultyMax}
+              </p>
+            </div>
           </div>
         ))}
       </div>

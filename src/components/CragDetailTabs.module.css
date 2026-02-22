@@ -262,12 +262,12 @@
 .boulderCard {
   display: flex;
   flex-direction: column;
+  cursor: pointer;
+  transition: transform 0.2s;
 }
 
-.boulderCardLink {
-  display: block;
-  text-decoration: none;
-  color: inherit;
+.boulderCard:hover {
+  transform: translateY(-2px);
 }
 
 .boulderImage {
@@ -305,25 +305,6 @@
   font-size: 0.85rem;
   color: #999;
   margin: 0;
-}
-
-.viewRoutesButton {
-  width: 100%;
-  margin-top: 8px;
-  padding: 10px;
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #333;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.viewRoutesButton:hover {
-  background: #e8e8e8;
-  border-color: #ccc;
 }
 
 /* Route Tab */
