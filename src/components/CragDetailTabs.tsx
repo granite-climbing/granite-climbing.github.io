@@ -77,6 +77,10 @@ export default function CragDetailTabs({ crag, boulders, problems, cultureItems 
     setActiveTab('route');
   };
 
+  const handleClearBoulderFilter = () => {
+    setSelectedBoulder(null);
+  };
+
   const handleTabChange = (tabId: TabType) => {
     setActiveTab(tabId);
     if (tabId !== 'route') {
@@ -101,7 +105,7 @@ export default function CragDetailTabs({ crag, boulders, problems, cultureItems 
       <div className={styles.content}>
         {activeTab === 'info' && <InfoTab crag={crag} />}
         {activeTab === 'boulder' && <BoulderTab crag={crag} boulders={boulders} onBoulderClick={handleBoulderClick} />}
-        {activeTab === 'route' && <RouteTab crag={crag} problems={problems} selectedBoulder={selectedBoulder} />}
+        {activeTab === 'route' && <RouteTab crag={crag} problems={problems} selectedBoulder={selectedBoulder} onClearFilter={handleClearBoulderFilter} />}
         {activeTab === 'map' && <MapTab crag={crag} />}
         {activeTab === 'travel' && <TravelTab cultureItems={cultureItems} />}
       </div>
@@ -281,7 +285,7 @@ function BoulderTab({ crag, boulders, onBoulderClick }: { crag: Crag; boulders: 
   );
 }
 
-function RouteTab({ crag, problems, selectedBoulder }: { crag: Crag; problems: Problem[]; selectedBoulder: string | null }) {
+function RouteTab({ crag, problems, selectedBoulder, onClearFilter }: { crag: Crag; problems: Problem[]; selectedBoulder: string | null; onClearFilter: () => void }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'grade' | 'boulder'>('grade');
 
@@ -323,7 +327,7 @@ function RouteTab({ crag, problems, selectedBoulder }: { crag: Crag; problems: P
           <h3 className={styles.selectedBoulderTitle}>{selectedBoulderInfo.boulderTitle}</h3>
           <button
             className={styles.showAllButton}
-            onClick={() => window.location.href = `/crag/${crag.slug}?tab=route`}
+            onClick={onClearFilter}
           >
             Route All <span className={styles.arrow}>→</span>
           </button>
