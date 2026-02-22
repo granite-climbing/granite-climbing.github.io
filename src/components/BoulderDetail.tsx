@@ -56,7 +56,6 @@ interface SubmittedVideo {
 export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithProblems }: BoulderDetailProps) {
   const [currentTopoIndex, setCurrentTopoIndex] = useState(0);
   const [selectedProblemForImage, setSelectedProblemForImage] = useState<Problem | null>(null);
-  const [isImageExpanded, setIsImageExpanded] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
@@ -85,19 +84,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
     }
   }, [toposWithProblems]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      if (scrollY > 50) {
-        setIsImageExpanded(true);
-      } else {
-        setIsImageExpanded(false);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // Scroll-based image expansion removed
 
   const handlePrevTopo = () => {
     if (currentTopoIndex > 0) {
@@ -283,7 +270,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
   return (
     <div className={styles.container}>
       {/* Crag Navigation */}
-      <div className={`${styles.navigation} ${isImageExpanded ? styles.navigationHidden : ''}`}>
+      <div className={styles.navigation}>
         <a href={`/crag/${cragSlug}`} className={styles.navButton}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -294,7 +281,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
       </div>
 
       {/* Topo Image or Problem Image */}
-      <div className={`${styles.imageSection} ${isImageExpanded ? styles.imageSectionExpanded : ''}`}>
+      <div className={styles.imageSection}>
         <img
           src={selectedProblemForImage?.image || currentTopo.image}
           alt={selectedProblemForImage?.title || currentTopo.title}
