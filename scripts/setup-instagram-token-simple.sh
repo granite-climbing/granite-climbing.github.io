@@ -1,24 +1,23 @@
 #!/bin/bash
 #
-# Instagram Graph API 토큰 발급 스크립트
+# Instagram Graph API 토큰 발급 스크립트 (간소화 버전)
 #
 # 전체 흐름:
 #   1. Facebook User Token (Graph API Explorer에서 수동 발급)
 #   2. User Token → Long-Lived User Token 교환
-#   3. 비즈니스 포트폴리오 조회
-#   4. 비즈니스 소유 페이지 조회 → Page Token 획득
-#   5. Page Token으로 Instagram Business Account ID 조회
-#   6. 해시태그 검색 테스트
+#   3. /me/accounts로 페이지 조회 → Page Token 획득
+#   4. Page Token으로 Instagram Business Account ID 조회
+#   5. 해시태그 검색 테스트
 #
 # 사전 준비:
 #   - Meta Developer App 생성 (https://developers.facebook.com)
 #   - 이용 사례에서 Instagram 콘텐츠 액세스 추가
 #   - Instagram Business/Creator 계정이 Facebook 페이지에 연결
 #   - Graph API Explorer에서 User Token 발급:
-#     권한: pages_show_list, pages_read_engagement, instagram_basic, instagram_manage_comments
+#     필수 권한: pages_show_list, pages_read_engagement, instagram_basic
 #
 # 사용법:
-#   ./scripts/setup-instagram-token.sh
+#   ./scripts/setup-instagram-token-simple.sh
 
 set -e
 
@@ -35,6 +34,7 @@ NC='\033[0m'
 
 echo -e "${CYAN}========================================${NC}"
 echo -e "${CYAN} Instagram Graph API 토큰 설정${NC}"
+echo -e "${CYAN} (간소화 버전 - /me/accounts 사용)${NC}"
 echo -e "${CYAN}========================================${NC}"
 echo ""
 
@@ -56,8 +56,10 @@ echo ""
 
 # Step 1: User Token 입력
 echo -e "${YELLOW}[Step 1] Facebook User Token 입력${NC}"
-echo "  Graph API Explorer에서 발급받은 단기 User Token을 붙여넣으세요."
+echo "  Graph API Explorer에서 발급받은 User Token을 붙여넣으세요."
 echo "  (https://developers.facebook.com/tools/explorer/)"
+echo ""
+echo "  필수 권한: pages_show_list, pages_read_engagement, instagram_basic"
 echo ""
 read -p "User Token: " USER_TOKEN
 
@@ -81,61 +83,32 @@ fi
 echo -e "${GREEN}  Long-Lived User Token 획득 완료${NC}"
 echo ""
 
-# Step 3: 비즈니스 포트폴리오 조회
-echo -e "${YELLOW}[Step 3] 비즈니스 포트폴리오 조회 중...${NC}"
-BIZ_RESPONSE=$(curl -s "${API_BASE}/me/businesses?fields=id,name&access_token=${LL_TOKEN}")
-BIZ_LIST=$(echo "$BIZ_RESPONSE" | python3 -c "
-import sys, json
-data = json.load(sys.stdin).get('data', [])
-for i, b in enumerate(data):
-    print(f\"  [{i}] {b['id']} : {b['name']}\")
-" 2>/dev/null)
-
-if [ -z "$BIZ_LIST" ]; then
-  echo -e "${RED}  비즈니스 포트폴리오가 없습니다.${NC}"
-  echo "  응답: $BIZ_RESPONSE"
-  echo ""
-  echo "  비즈니스 포트폴리오 없이 /me/accounts로 시도합니다..."
-
-  # 비즈니스 없이 직접 페이지 조회
-  PAGES_RESPONSE=$(curl -s "${API_BASE}/me/accounts?fields=id,name,access_token&access_token=${LL_TOKEN}")
-  PAGE_COUNT=$(echo "$PAGES_RESPONSE" | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('data',[])))" 2>/dev/null)
-
-  if [ "$PAGE_COUNT" = "0" ] || [ -z "$PAGE_COUNT" ]; then
-    echo -e "${RED}  페이지도 조회되지 않습니다. 비즈니스 포트폴리오가 필요합니다.${NC}"
-    exit 1
-  fi
-else
-  echo "$BIZ_LIST"
-  echo ""
-
-  BIZ_COUNT=$(echo "$BIZ_RESPONSE" | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('data',[])))" 2>/dev/null)
-
-  if [ "$BIZ_COUNT" = "1" ]; then
-    BIZ_ID=$(echo "$BIZ_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['data'][0]['id'])" 2>/dev/null)
-    echo -e "  자동 선택: ${BIZ_ID}"
-  else
-    read -p "  비즈니스 번호 선택: " BIZ_INDEX
-    BIZ_ID=$(echo "$BIZ_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['data'][${BIZ_INDEX:-0}]['id'])" 2>/dev/null)
-  fi
-  echo ""
-
-  # Step 4: 비즈니스 소유 페이지 조회
-  echo -e "${YELLOW}[Step 4] 비즈니스 소유 페이지 조회 중...${NC}"
-  PAGES_RESPONSE=$(curl -s "${API_BASE}/${BIZ_ID}/owned_pages?fields=id,name,access_token&access_token=${LL_TOKEN}")
-fi
+# Step 3: /me/accounts로 페이지 조회
+echo -e "${YELLOW}[Step 3] 페이지 목록 조회 중 (/me/accounts)...${NC}"
+PAGES_RESPONSE=$(curl -s "${API_BASE}/me/accounts?fields=id,name,access_token&access_token=${LL_TOKEN}")
 
 # 페이지 목록 표시
 PAGE_LIST=$(echo "$PAGES_RESPONSE" | python3 -c "
 import sys, json
 data = json.load(sys.stdin).get('data', [])
-for i, p in enumerate(data):
-    print(f\"  [{i}] {p['id']} : {p['name']}\")
+if not data:
+    print('')
+else:
+    for i, p in enumerate(data):
+        print(f\"  [{i}] {p['id']} : {p['name']}\")
 " 2>/dev/null)
 
 if [ -z "$PAGE_LIST" ]; then
-  echo -e "${RED}  페이지가 없습니다.${NC}"
+  echo -e "${RED}  페이지가 조회되지 않습니다.${NC}"
   echo "  응답: $PAGES_RESPONSE"
+  echo ""
+  echo -e "${YELLOW}  원인:${NC}"
+  echo "  1. Graph API Explorer에서 pages_show_list 권한을 승인하지 않음"
+  echo "  2. 승인 시 페이지 접근을 허용하지 않음"
+  echo "  3. '새 페이지 환경' 페이지로 /me/accounts가 빈 배열 반환"
+  echo ""
+  echo "  '새 페이지 환경' 페이지인 경우, 다른 스크립트를 사용하세요:"
+  echo "    ./scripts/setup-instagram-token.sh"
   exit 1
 fi
 
@@ -159,8 +132,8 @@ PAGE_NAME=$(echo "$PAGES_RESPONSE" | python3 -c "import sys,json; print(json.loa
 echo -e "${GREEN}  페이지: ${PAGE_NAME} (${PAGE_ID})${NC}"
 echo ""
 
-# Step 5: Instagram Business Account ID 조회
-echo -e "${YELLOW}[Step 5] Instagram Business Account ID 조회 중...${NC}"
+# Step 4: Instagram Business Account ID 조회
+echo -e "${YELLOW}[Step 4] Instagram Business Account ID 조회 중...${NC}"
 IG_RESPONSE=$(curl -s "${API_BASE}/${PAGE_ID}?fields=instagram_business_account&access_token=${PAGE_TOKEN}")
 IG_USER_ID=$(echo "$IG_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('instagram_business_account',{}).get('id',''))" 2>/dev/null)
 
@@ -174,8 +147,8 @@ fi
 echo -e "${GREEN}  Instagram Business Account ID: ${IG_USER_ID}${NC}"
 echo ""
 
-# Step 6: 토큰 검증
-echo -e "${YELLOW}[Step 6] 토큰 검증 중...${NC}"
+# Step 5: 토큰 검증
+echo -e "${YELLOW}[Step 5] 토큰 검증 중...${NC}"
 DEBUG_RESPONSE=$(curl -s "${API_BASE}/debug_token?input_token=${PAGE_TOKEN}&access_token=${IG_CLIENT_ID}|${IG_CLIENT_SECRET}")
 EXPIRES=$(echo "$DEBUG_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('expires_at','-1'))" 2>/dev/null)
 IS_VALID=$(echo "$DEBUG_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('data',{}).get('is_valid','False'))" 2>/dev/null)
@@ -190,14 +163,22 @@ else
 fi
 echo ""
 
-# Step 7: 해시태그 검색 테스트
-echo -e "${YELLOW}[Step 7] 해시태그 검색 테스트 (climbing)...${NC}"
+# Step 6: 해시태그 검색 테스트 (앱 검수 필요)
+echo -e "${YELLOW}[Step 6] 해시태그 검색 테스트 (climbing)...${NC}"
+echo "  주의: 해시태그 검색은 앱 검수 통과 후 사용 가능합니다."
+echo ""
 HASHTAG_RESPONSE=$(curl -s "${API_BASE}/ig_hashtag_search?q=climbing&user_id=${IG_USER_ID}&access_token=${PAGE_TOKEN}")
 HASHTAG_ID=$(echo "$HASHTAG_RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin).get('data',[]); print(d[0]['id'] if d else '')" 2>/dev/null)
 
 if [ -z "$HASHTAG_ID" ]; then
-  echo -e "${RED}  해시태그 검색 실패${NC}"
-  echo "  응답: $HASHTAG_RESPONSE"
+  ERROR_CODE=$(echo "$HASHTAG_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('error',{}).get('code',''))" 2>/dev/null)
+  if [ "$ERROR_CODE" = "10" ]; then
+    echo -e "${YELLOW}  앱 검수가 필요합니다 (예상된 결과)${NC}"
+    echo "  Instagram Public Content Access 권한 검수 후 사용 가능합니다."
+  else
+    echo -e "${RED}  해시태그 검색 실패${NC}"
+    echo "  응답: $HASHTAG_RESPONSE"
+  fi
 else
   echo -e "${GREEN}  해시태그 'climbing' ID: ${HASHTAG_ID}${NC}"
 
@@ -208,7 +189,7 @@ else
 fi
 echo ""
 
-# Step 8: .env.local 업데이트
+# Step 7: .env.local 업데이트
 echo -e "${CYAN}========================================${NC}"
 echo -e "${CYAN} 결과 요약${NC}"
 echo -e "${CYAN}========================================${NC}"
