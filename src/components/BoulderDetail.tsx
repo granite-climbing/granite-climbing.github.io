@@ -216,8 +216,9 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
           <div className={styles.topoNavButtonPlaceholder} />
         )}
         <div className={styles.topoInfo}>
-          <div className={styles.boulderTitle}>{boulder.title}</div>
-          <div className={styles.topoCounter}>{currentTopoIndex + 1}/{totalTopos}</div>
+          <div className={styles.boulderTitle}>
+            {boulder.title} {currentTopoIndex + 1}/{totalTopos}
+          </div>
         </div>
         {currentTopoIndex < totalTopos - 1 ? (
           <button onClick={handleNextTopo} className={styles.topoNavButton}>

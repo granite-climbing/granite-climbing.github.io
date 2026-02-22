@@ -139,20 +139,12 @@
 .topoInfo {
   flex: 1;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .boulderTitle {
   font-size: 1.1rem;
   font-weight: 600;
   color: #333;
-}
-
-.topoCounter {
-  font-size: 0.85rem;
-  color: #666;
 }
 
 /* Problem List */
