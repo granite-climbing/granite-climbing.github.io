@@ -34,7 +34,6 @@ interface BoulderDetailProps {
   cragTitle: string;
   boulder: Boulder;
   toposWithProblems: TopoWithProblems[];
-  allBoulders: Boulder[];
 }
 
 interface InstagramMedia {
@@ -45,13 +44,7 @@ interface InstagramMedia {
   thumbnail_url?: string;
 }
 
-export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithProblems, allBoulders }: BoulderDetailProps) {
-  const currentIndex = allBoulders.findIndex((b) => b.slug === boulder.slug);
-  const total = allBoulders.length;
-
-  const prevBoulder = currentIndex > 0 ? allBoulders[currentIndex - 1] : null;
-  const nextBoulder = currentIndex < total - 1 ? allBoulders[currentIndex + 1] : null;
-
+export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithProblems }: BoulderDetailProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
@@ -132,46 +125,17 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
 
   return (
     <div className={styles.container}>
-      {/* Boulder Image */}
-      <div className={styles.imageSection}>
-        {boulder.thumbnail ? (
-          <img src={boulder.thumbnail} alt={boulder.title} className={styles.boulderImage} />
-        ) : (
-          <div className={styles.imagePlaceholder} />
-        )}
-      </div>
-
       {/* Boulder Navigation */}
       <div className={styles.navigation}>
-        {prevBoulder ? (
-          <a href={`/crag/${cragSlug}/boulder/${prevBoulder.slug}`} className={styles.navButton}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </a>
-        ) : (
-          <div className={styles.navButtonDisabled}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </div>
-        )}
+        <a href={`/crag/${cragSlug}`} className={styles.navButton}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </a>
         <span className={styles.navTitle}>
-          {boulder.title} {currentIndex + 1}/{total}
+          {boulder.title}
         </span>
-        {nextBoulder ? (
-          <a href={`/crag/${cragSlug}/boulder/${nextBoulder.slug}`} className={styles.navButton}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-          </a>
-        ) : (
-          <div className={styles.navButtonDisabled}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-          </div>
-        )}
+        <div className={styles.navButtonPlaceholder} />
       </div>
 
       {/* Topos and Problems */}

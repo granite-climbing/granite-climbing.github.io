@@ -56,6 +56,11 @@
   color: #ddd;
 }
 
+.navButtonPlaceholder {
+  width: 40px;
+  height: 40px;
+}
+
 .navTitle {
   font-size: 1rem;
   font-weight: 600;

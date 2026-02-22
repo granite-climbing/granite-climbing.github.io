@@ -36,7 +36,6 @@ export default async function BoulderDetailPage({ params }: BoulderDetailPagePro
     notFound();
   }
 
-  const allBoulders = getBouldersByCrag(params.slug);
   const topos = getToposByBoulder(params.boulderSlug);
 
   // Get problems for each topo
@@ -54,7 +53,6 @@ export default async function BoulderDetailPage({ params }: BoulderDetailPagePro
           cragTitle={crag.title}
           boulder={boulder}
           toposWithProblems={toposWithProblems}
-          allBoulders={allBoulders}
         />
       </main>
       <Footer />
