@@ -74,15 +74,23 @@ export async function handleSubmitBetaVideo(
       return jsonResponse({ error: 'Video already submitted for this problem' }, 409, corsHeaders);
     }
 
-    // Fetch Instagram post thumbnail using public oEmbed API (no access token required)
+    // Fetch Instagram post thumbnail by scraping the page
     let thumbnailUrl = null;
     try {
-      const oembedUrl = `https://graph.instagram.com/instagram_oembed?url=${encodeURIComponent(instagramUrl)}&fields=thumbnail_url`;
-      const oembedResponse = await fetch(oembedUrl);
+      const response = await fetch(instagramUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+        }
+      });
 
-      if (oembedResponse.ok) {
-        const oembedData = await oembedResponse.json() as { thumbnail_url?: string };
-        thumbnailUrl = oembedData.thumbnail_url || null;
+      if (response.ok) {
+        const html = await response.text();
+
+        // Try to extract thumbnail from meta tags
+        const ogImageMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
+        const twitterImageMatch = html.match(/<meta name="twitter:image" content="([^"]+)"/);
+
+        thumbnailUrl = ogImageMatch?.[1] || twitterImageMatch?.[1] || null;
       }
     } catch (error) {
       console.error('Failed to fetch Instagram thumbnail:', error);

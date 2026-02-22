@@ -471,12 +471,33 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
 
                       {/* Display submitted videos */}
                       {submittedVideos.map((video) => (
-                        <a
+                        <div
                           key={`submitted-${video.id}`}
-                          href={video.instagramUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
                           className={styles.gridItem}
+                          onClick={() => {
+                            // Try to open Instagram app first, fallback to web
+                            const postId = video.instagramUrl.match(/\/(p|reel)\/([A-Za-z0-9_-]+)/)?.[2];
+                            if (postId) {
+                              const appUrl = `instagram://media?id=${postId}`;
+                              const iframe = document.createElement('iframe');
+                              iframe.style.display = 'none';
+                              iframe.src = appUrl;
+                              document.body.appendChild(iframe);
+
+                              // Fallback to web after 1 second
+                              setTimeout(() => {
+                                window.open(video.instagramUrl, '_blank');
+                              }, 1000);
+
+                              // Cleanup
+                              setTimeout(() => {
+                                document.body.removeChild(iframe);
+                              }, 2000);
+                            } else {
+                              window.open(video.instagramUrl, '_blank');
+                            }
+                          }}
+                          style={{ cursor: 'pointer' }}
                         >
                           {video.thumbnailUrl ? (
                             <img
@@ -494,7 +515,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                           <div className={styles.gridVideoIcon}>
                             <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
                           </div>
-                        </a>
+                        </div>
                       ))}
 
                       {instagramMedia.length === 0 && submittedVideos.length === 0 && (
