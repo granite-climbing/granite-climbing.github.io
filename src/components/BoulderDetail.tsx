@@ -55,6 +55,9 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
   const [copiedHashtag, setCopiedHashtag] = useState(false);
   const [instagramMedia, setInstagramMedia] = useState<InstagramMedia[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadModalVisible, setUploadModalVisible] = useState(false);
+  const [instagramLink, setInstagramLink] = useState('');
 
   const currentTopo = toposWithProblems[currentTopoIndex];
   const totalTopos = toposWithProblems.length;
@@ -161,9 +164,33 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
     navigator.clipboard.writeText(caption);
     setCopiedHashtag(true);
 
+    // Open Instagram
+    window.open('https://www.instagram.com/', '_blank');
+
     setTimeout(() => {
       setCopiedHashtag(false);
     }, 2000);
+  };
+
+  const handleOpenUploadModal = () => {
+    setUploadModalOpen(true);
+    setTimeout(() => {
+      setUploadModalVisible(true);
+    }, 10);
+  };
+
+  const handleCloseUploadModal = () => {
+    setUploadModalVisible(false);
+    setTimeout(() => {
+      setUploadModalOpen(false);
+      setInstagramLink('');
+    }, 300);
+  };
+
+  const handleSubmitInstagramLink = () => {
+    // TODO: Submit Instagram link to backend
+    console.log('Instagram link:', instagramLink);
+    handleCloseUploadModal();
   };
 
   useEffect(() => {
@@ -305,10 +332,12 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
             </div>
             <div className={styles.sheetBody}>
               <p className={styles.sheetDescription}>
-                인스타그램 캡션을 복사하고 베타 영상을 게시해보세요!
+                현재 루트 이상이 인식되면 인스타그램 게시물 개시를 권합니다. 자세한 문구
+                구 안내 문구
               </p>
 
               <div className={styles.captionBox}>
+                <div className={styles.captionLabel}>캡션</div>
                 <div className={styles.captionText}>
                   &quot;{selectedProblem.title}&quot; {selectedProblem.grade} on {selectedTopo.title}, {boulder.title},{' '}
                   {cragTitle}. @granite_climbing #granite_climbing #climbing #bouldering
@@ -316,7 +345,11 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
               </div>
 
               <button className={styles.sheetCta} onClick={handleCopyCaption}>
-                {copiedHashtag ? '✓ 캡션 복사됨!' : '캡션 복사하기'}
+                {copiedHashtag ? '✓ 현재 복사됨 → Instagram 열기' : '현재 복사하고 → Instagram 열기'}
+              </button>
+
+              <button className={styles.sheetCtaSecondary} onClick={handleOpenUploadModal}>
+                베타 영상 올리기
               </button>
 
               {selectedProblem.hashtag && (
@@ -351,6 +384,44 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Upload Beta Video Modal */}
+      {uploadModalOpen && (
+        <>
+          <div
+            className={`${styles.sheetOverlay} ${uploadModalVisible ? styles.sheetOverlayVisible : ''}`}
+            onClick={handleCloseUploadModal}
+          />
+          <div className={`${styles.uploadModal} ${uploadModalVisible ? styles.uploadModalVisible : ''}`}>
+            <div className={styles.uploadModalHandle} />
+            <div className={styles.uploadModalHeader}>
+              <h2 className={styles.uploadModalTitle}>베타 영상 올리기</h2>
+              <button className={styles.sheetClose} onClick={handleCloseUploadModal}>
+                ✕
+              </button>
+            </div>
+            <div className={styles.uploadModalBody}>
+              <p className={styles.uploadModalDescription}>
+                Instagram 링크를 입력해주세요
+              </p>
+              <input
+                type="text"
+                placeholder="https://www.instagram.com/p/..."
+                value={instagramLink}
+                onChange={(e) => setInstagramLink(e.target.value)}
+                className={styles.uploadModalInput}
+              />
+              <button
+                className={styles.uploadModalSubmit}
+                onClick={handleSubmitInstagramLink}
+                disabled={!instagramLink.trim()}
+              >
+                제출하기
+              </button>
             </div>
           </div>
         </>
