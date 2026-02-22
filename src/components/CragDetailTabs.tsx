@@ -256,10 +256,10 @@ function BoulderTab({ crag, boulders, onBoulderClick }: { crag: Crag; boulders: 
     <div className={styles.boulderTab}>
       <div className={styles.boulderList}>
         {boulders.map((boulder) => (
-          <div key={boulder.slug}>
+          <div key={boulder.slug} className={styles.boulderCard}>
             <a
               href={`/crag/${crag.slug}/boulder/${boulder.slug}`}
-              className={styles.boulderCard}
+              className={styles.boulderCardLink}
             >
               <div className={styles.boulderImage}>
                 {boulder.thumbnail ? (
@@ -276,7 +276,11 @@ function BoulderTab({ crag, boulders, onBoulderClick }: { crag: Crag; boulders: 
               </div>
             </a>
             <button
-              onClick={() => onBoulderClick(boulder.slug)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onBoulderClick(boulder.slug);
+              }}
               className={styles.viewRoutesButton}
             >
               View Routes

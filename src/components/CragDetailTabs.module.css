@@ -260,6 +260,11 @@
 }
 
 .boulderCard {
+  display: flex;
+  flex-direction: column;
+}
+
+.boulderCardLink {
   display: block;
   text-decoration: none;
   color: inherit;
