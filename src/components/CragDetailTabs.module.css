@@ -330,20 +330,25 @@
 }
 
 .showAllButton {
-  padding: 8px 16px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: none;
+  border: none;
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 400;
   color: #666;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.2s;
 }
 
 .showAllButton:hover {
-  background: #f5f5f5;
   color: #333;
+}
+
+.showAllButton .arrow {
+  font-size: 0.9rem;
 }
 
 .searchBox {
@@ -438,7 +443,7 @@
 
 .boulderColumn {
   flex: 1.5;
-  text-align: right;
+  text-align: left;
   color: #999;
 }
 

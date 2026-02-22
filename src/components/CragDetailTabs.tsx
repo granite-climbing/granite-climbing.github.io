@@ -325,7 +325,7 @@ function RouteTab({ crag, problems, selectedBoulder }: { crag: Crag; problems: P
             className={styles.showAllButton}
             onClick={() => window.location.href = `/crag/${crag.slug}?tab=route`}
           >
-            Show All Routes
+            Route All <span className={styles.arrow}>→</span>
           </button>
         </div>
       )}
