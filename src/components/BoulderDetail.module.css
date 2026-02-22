@@ -81,6 +81,7 @@
 
 /* Image Section */
 .imageSection {
+  position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
@@ -100,6 +101,40 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.topoMapButton {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  color: #333;
+  transition: all 0.2s;
+  z-index: 2;
+}
+
+.topoMapButton:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transform: scale(1.05);
+}
+
+.topoMapButton:active {
+  transform: scale(0.95);
+}
+
+.topoMapButton svg {
+  width: 24px;
+  height: 24px;
 }
 
 /* Topo Navigation */

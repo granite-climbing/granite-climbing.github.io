@@ -300,6 +300,27 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
           alt={selectedProblemForImage?.title || currentTopo.title}
           className={styles.topoImage}
         />
+        {boulder.latitude && boulder.longitude && (
+          <button
+            className={styles.topoMapButton}
+            onClick={(e) => {
+              e.stopPropagation();
+              const kakaoMapUrl = `kakaomap://look?p=${boulder.latitude},${boulder.longitude}`;
+              const webFallbackUrl = `https://map.kakao.com/link/map/${encodeURIComponent(boulder.title)},${boulder.latitude},${boulder.longitude}`;
+
+              // Try to open Kakao Map app first, fallback to web
+              window.location.href = kakaoMapUrl;
+              setTimeout(() => {
+                window.open(webFallbackUrl, '_blank');
+              }, 500);
+            }}
+            aria-label="카카오맵에서 위치 보기"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Boulder and Topo Navigation */}
