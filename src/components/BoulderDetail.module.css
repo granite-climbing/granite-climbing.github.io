@@ -1,5 +1,6 @@
 .container {
   background-color: #fff;
+  padding-top: 57px;
 }
 
 /* Boulder Image */
@@ -29,6 +30,17 @@
   justify-content: space-between;
   padding: 16px 16px;
   border-bottom: 1px solid #eee;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  z-index: 10;
+  transition: transform 0.3s ease;
+}
+
+.navigationHidden {
+  transform: translateY(-100%);
 }
 
 .navButton {
@@ -73,6 +85,15 @@
   aspect-ratio: 4 / 3;
   overflow: hidden;
   background: #f0f0f0;
+  position: sticky;
+  top: 0;
+  transition: all 0.3s ease;
+  z-index: 5;
+}
+
+.imageSectionExpanded {
+  height: 100vh;
+  aspect-ratio: unset;
 }
 
 .topoImage {
@@ -88,6 +109,31 @@
   justify-content: space-between;
   padding: 16px;
   border-bottom: 1px solid #eee;
+  background: #fff;
+  position: relative;
+  z-index: 6;
+}
+
+.topoNavButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: #333;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.topoNavButton:active {
+  opacity: 0.6;
+}
+
+.topoNavButtonPlaceholder {
+  width: 32px;
+  height: 32px;
 }
 
 .topoInfo {

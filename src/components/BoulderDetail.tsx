@@ -47,6 +47,7 @@ interface InstagramMedia {
 export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithProblems }: BoulderDetailProps) {
   const [currentTopoIndex, setCurrentTopoIndex] = useState(0);
   const [selectedProblemForImage, setSelectedProblemForImage] = useState<Problem | null>(null);
+  const [isImageExpanded, setIsImageExpanded] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
@@ -57,6 +58,20 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
 
   const currentTopo = toposWithProblems[currentTopoIndex];
   const totalTopos = toposWithProblems.length;
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      if (scrollY > 50) {
+        setIsImageExpanded(true);
+      } else {
+        setIsImageExpanded(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handlePrevTopo = () => {
     if (currentTopoIndex > 0) {
@@ -170,7 +185,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
   return (
     <div className={styles.container}>
       {/* Crag Navigation */}
-      <div className={styles.navigation}>
+      <div className={`${styles.navigation} ${isImageExpanded ? styles.navigationHidden : ''}`}>
         <a href={`/crag/${cragSlug}`} className={styles.navButton}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -181,7 +196,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
       </div>
 
       {/* Topo Image or Problem Image */}
-      <div className={styles.imageSection}>
+      <div className={`${styles.imageSection} ${isImageExpanded ? styles.imageSectionExpanded : ''}`}>
         <img
           src={selectedProblemForImage?.image || currentTopo.image}
           alt={selectedProblemForImage?.title || currentTopo.title}
@@ -191,30 +206,28 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
 
       {/* Boulder and Topo Navigation */}
       <div className={styles.topoNavigation}>
-        <button
-          onClick={handlePrevTopo}
-          className={styles.navButton}
-          disabled={currentTopoIndex === 0}
-          style={{ visibility: currentTopoIndex === 0 ? 'hidden' : 'visible' }}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
+        {currentTopoIndex > 0 ? (
+          <button onClick={handlePrevTopo} className={styles.topoNavButton}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+        ) : (
+          <div className={styles.topoNavButtonPlaceholder} />
+        )}
         <div className={styles.topoInfo}>
           <div className={styles.boulderTitle}>{boulder.title}</div>
-          <div className={styles.topoCounter}>{currentTopo.title} {currentTopoIndex + 1}/{totalTopos}</div>
+          <div className={styles.topoCounter}>{currentTopoIndex + 1}/{totalTopos}</div>
         </div>
-        <button
-          onClick={handleNextTopo}
-          className={styles.navButton}
-          disabled={currentTopoIndex === totalTopos - 1}
-          style={{ visibility: currentTopoIndex === totalTopos - 1 ? 'hidden' : 'visible' }}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
+        {currentTopoIndex < totalTopos - 1 ? (
+          <button onClick={handleNextTopo} className={styles.topoNavButton}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        ) : (
+          <div className={styles.topoNavButtonPlaceholder} />
+        )}
       </div>
 
       {/* Problem List for Current Topo */}
