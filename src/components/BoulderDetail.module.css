@@ -62,9 +62,58 @@
   color: #333;
 }
 
+/* Topo Section */
+.topoSection {
+  margin-bottom: 40px;
+}
+
+.topoImageSection {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.topoImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.topoHeader {
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.topoTitle {
+  margin: 0 0 8px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.topoDescription {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+}
+
 /* Problem List */
 .problemList {
   padding: 0 16px;
+}
+
+.problemImageContainer {
+  margin-top: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.problemImage {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .emptyState {

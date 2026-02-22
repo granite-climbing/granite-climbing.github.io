@@ -334,7 +334,7 @@ function RouteTab({ crag, problems }: { crag: Crag; problems: Problem[] }) {
         <div className={styles.routeList}>
           {sortedProblems.map((problem, index) => (
             <a
-              href={`/crag/${crag.slug}/boulder/${problem.boulderSlug}/topo/${problem.topoSlug}`}
+              href={`/crag/${crag.slug}/boulder/${problem.boulderSlug}`}
               key={`${problem.topoSlug}-${problem.slug}-${index}`}
               className={styles.routeRow}
             >
