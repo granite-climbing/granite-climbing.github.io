@@ -321,6 +321,7 @@ function BoulderTab({ crag, boulders, onBoulderClick }: { crag: Crag; boulders: 
 function RouteTab({ crag, problems, selectedBoulder, onClearFilter }: { crag: Crag; problems: Problem[]; selectedBoulder: string | null; onClearFilter: () => void }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'grade' | 'boulder'>('grade');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Filter by selected boulder first
   const boulderFilteredProblems = selectedBoulder
@@ -336,9 +337,10 @@ function RouteTab({ crag, problems, selectedBoulder, onClearFilter }: { crag: Cr
     if (sortBy === 'grade') {
       const gradeA = parseInt(a.grade.replace('V', '')) || 0;
       const gradeB = parseInt(b.grade.replace('V', '')) || 0;
-      return gradeA - gradeB;
+      return sortOrder === 'asc' ? gradeA - gradeB : gradeB - gradeA;
     }
-    return a.boulderTitle.localeCompare(b.boulderTitle);
+    const comparison = a.boulderTitle.localeCompare(b.boulderTitle);
+    return sortOrder === 'asc' ? comparison : -comparison;
   });
 
   if (problems.length === 0) {
@@ -385,17 +387,35 @@ function RouteTab({ crag, problems, selectedBoulder, onClearFilter }: { crag: Cr
         <div className={styles.routeHeader}>
           <button
             className={`${styles.routeHeaderCell} ${styles.routeColumn}`}
-            onClick={() => setSortBy('boulder')}
+            onClick={() => {
+              if (sortBy === 'boulder') {
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortBy('boulder');
+                setSortOrder('asc');
+              }
+            }}
           >
             Route
-            {sortBy === 'boulder' && <span className={styles.sortArrow}>▼</span>}
+            {sortBy === 'boulder' && (
+              <span className={styles.sortArrow}>{sortOrder === 'asc' ? '▼' : '▲'}</span>
+            )}
           </button>
           <button
             className={`${styles.routeHeaderCell} ${styles.gradeColumn}`}
-            onClick={() => setSortBy('grade')}
+            onClick={() => {
+              if (sortBy === 'grade') {
+                setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              } else {
+                setSortBy('grade');
+                setSortOrder('asc');
+              }
+            }}
           >
             Grade
-            {sortBy === 'grade' && <span className={styles.sortArrow}>▼</span>}
+            {sortBy === 'grade' && (
+              <span className={styles.sortArrow}>{sortOrder === 'asc' ? '▼' : '▲'}</span>
+            )}
           </button>
           <div className={`${styles.routeHeaderCell} ${styles.boulderColumn}`}>
             Boulder
