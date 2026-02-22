@@ -62,6 +62,7 @@ type TabType = 'info' | 'boulder' | 'route' | 'map' | 'travel';
 
 export default function CragDetailTabs({ crag, boulders, problems, cultureItems }: CragDetailTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('info');
+  const [selectedBoulder, setSelectedBoulder] = useState<string | null>(null);
 
   const tabs: { id: TabType; label: string }[] = [
     { id: 'info', label: 'Info' },
@@ -71,6 +72,18 @@ export default function CragDetailTabs({ crag, boulders, problems, cultureItems 
     { id: 'travel', label: 'Travel' },
   ];
 
+  const handleBoulderClick = (boulderSlug: string) => {
+    setSelectedBoulder(boulderSlug);
+    setActiveTab('route');
+  };
+
+  const handleTabChange = (tabId: TabType) => {
+    setActiveTab(tabId);
+    if (tabId !== 'route') {
+      setSelectedBoulder(null);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.tabs}>
@@ -78,7 +91,7 @@ export default function CragDetailTabs({ crag, boulders, problems, cultureItems 
           <button
             key={tab.id}
             className={`${styles.tab} ${activeTab === tab.id ? styles.active : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => handleTabChange(tab.id)}
           >
             {tab.label}
           </button>
@@ -87,8 +100,8 @@ export default function CragDetailTabs({ crag, boulders, problems, cultureItems 
 
       <div className={styles.content}>
         {activeTab === 'info' && <InfoTab crag={crag} />}
-        {activeTab === 'boulder' && <BoulderTab crag={crag} boulders={boulders} />}
-        {activeTab === 'route' && <RouteTab crag={crag} problems={problems} />}
+        {activeTab === 'boulder' && <BoulderTab crag={crag} boulders={boulders} onBoulderClick={handleBoulderClick} />}
+        {activeTab === 'route' && <RouteTab crag={crag} problems={problems} selectedBoulder={selectedBoulder} />}
         {activeTab === 'map' && <MapTab crag={crag} />}
         {activeTab === 'travel' && <TravelTab cultureItems={cultureItems} />}
       </div>
@@ -230,7 +243,7 @@ function InfoTab({ crag }: { crag: Crag }) {
   );
 }
 
-function BoulderTab({ crag, boulders }: { crag: Crag; boulders: Boulder[] }) {
+function BoulderTab({ crag, boulders, onBoulderClick }: { crag: Crag; boulders: Boulder[]; onBoulderClick: (boulderSlug: string) => void }) {
   if (boulders.length === 0) {
     return (
       <div className={styles.placeholderTab}>
@@ -243,36 +256,48 @@ function BoulderTab({ crag, boulders }: { crag: Crag; boulders: Boulder[] }) {
     <div className={styles.boulderTab}>
       <div className={styles.boulderList}>
         {boulders.map((boulder) => (
-          <a
-            href={`/crag/${crag.slug}/boulder/${boulder.slug}`}
-            key={boulder.slug}
-            className={styles.boulderCard}
-          >
-            <div className={styles.boulderImage}>
-              {boulder.thumbnail ? (
-                <img src={boulder.thumbnail} alt={boulder.title} />
-              ) : (
-                <div className={styles.boulderImagePlaceholder} />
-              )}
-            </div>
-            <div className={styles.boulderInfo}>
-              <h3 className={styles.boulderTitle}>{boulder.title}</h3>
-              <p className={styles.boulderMeta}>
-                {boulder.problemCount} problems · {crag.difficultyMin}-{crag.difficultyMax}
-              </p>
-            </div>
-          </a>
+          <div key={boulder.slug}>
+            <a
+              href={`/crag/${crag.slug}/boulder/${boulder.slug}`}
+              className={styles.boulderCard}
+            >
+              <div className={styles.boulderImage}>
+                {boulder.thumbnail ? (
+                  <img src={boulder.thumbnail} alt={boulder.title} />
+                ) : (
+                  <div className={styles.boulderImagePlaceholder} />
+                )}
+              </div>
+              <div className={styles.boulderInfo}>
+                <h3 className={styles.boulderTitle}>{boulder.title}</h3>
+                <p className={styles.boulderMeta}>
+                  {boulder.problemCount} problems · {crag.difficultyMin}-{crag.difficultyMax}
+                </p>
+              </div>
+            </a>
+            <button
+              onClick={() => onBoulderClick(boulder.slug)}
+              className={styles.viewRoutesButton}
+            >
+              View Routes
+            </button>
+          </div>
         ))}
       </div>
     </div>
   );
 }
 
-function RouteTab({ crag, problems }: { crag: Crag; problems: Problem[] }) {
+function RouteTab({ crag, problems, selectedBoulder }: { crag: Crag; problems: Problem[]; selectedBoulder: string | null }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'grade' | 'boulder'>('grade');
 
-  const filteredProblems = problems.filter((problem) =>
+  // Filter by selected boulder first
+  const boulderFilteredProblems = selectedBoulder
+    ? problems.filter((problem) => problem.boulderSlug === selectedBoulder)
+    : problems;
+
+  const filteredProblems = boulderFilteredProblems.filter((problem) =>
     problem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     problem.grade.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -294,8 +319,24 @@ function RouteTab({ crag, problems }: { crag: Crag; problems: Problem[] }) {
     );
   }
 
+  const selectedBoulderInfo = selectedBoulder
+    ? problems.find((p) => p.boulderSlug === selectedBoulder)
+    : null;
+
   return (
     <div className={styles.routeTab}>
+      {selectedBoulder && selectedBoulderInfo && (
+        <div className={styles.routeHeader}>
+          <h3 className={styles.selectedBoulderTitle}>{selectedBoulderInfo.boulderTitle}</h3>
+          <button
+            className={styles.showAllButton}
+            onClick={() => window.location.href = `/crag/${crag.slug}?tab=route`}
+          >
+            Show All Routes
+          </button>
+        </div>
+      )}
+
       <div className={styles.searchBox}>
         <svg className={styles.searchIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="11" cy="11" r="8"></circle>
