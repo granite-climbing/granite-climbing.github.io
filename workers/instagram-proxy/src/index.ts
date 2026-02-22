@@ -16,6 +16,7 @@ interface Env {
   INSTAGRAM_ACCESS_TOKEN: string;
   INSTAGRAM_USER_ID: string;
   ALLOWED_ORIGIN: string;
+  DB: D1Database;  // D1 database binding for beta videos
 }
 
 const INSTAGRAM_API = 'https://graph.facebook.com/v21.0';
@@ -29,7 +30,7 @@ export default {
     // CORS headers
     const corsHeaders: Record<string, string> = {
       'Access-Control-Allow-Origin': env.ALLOWED_ORIGIN || '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',  // Allow POST
       'Access-Control-Allow-Headers': 'Content-Type',
     };
 
@@ -38,7 +39,20 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders });
     }
 
-    // Only allow GET
+    const url = new URL(request.url);
+
+    // Route beta video endpoints
+    if (url.pathname === '/beta-videos') {
+      if (request.method === 'GET') {
+        return handleGetBetaVideos(request, env, corsHeaders);
+      } else if (request.method === 'POST') {
+        return handleSubmitBetaVideo(request, env, corsHeaders);
+      } else {
+        return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+      }
+    }
+
+    // Default: hashtag search (existing functionality)
     if (request.method !== 'GET') {
       return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
     }
@@ -48,16 +62,16 @@ export default {
       return jsonResponse({ error: 'Instagram API not configured' }, 500, corsHeaders);
     }
 
-    const url = new URL(request.url);
-    const tag = url.searchParams.get('tag');
+    const hashtag = url.searchParams.get('hashtag');
 
-    if (!tag) {
-      return jsonResponse({ error: 'Missing ?tag= parameter' }, 400, corsHeaders);
+    if (!hashtag) {
+      return jsonResponse({ error: 'Missing ?hashtag= parameter' }, 400, corsHeaders);
     }
 
     try {
-      const media = await searchHashtagMedia(tag, env);
-      return jsonResponse({ media }, 200, corsHeaders);
+      const media = await searchHashtagMedia(hashtag, env);
+      // FIX: Return { data } instead of { media } to match frontend expectation
+      return jsonResponse({ data: media }, 200, corsHeaders);
     } catch {
       return jsonResponse({ error: 'Failed to fetch Instagram data' }, 502, corsHeaders);
     }
@@ -131,4 +145,89 @@ function jsonResponse(body: unknown, status: number, headers: Record<string, str
       ...headers,
     },
   });
+}
+
+// Extract Instagram post ID from URL
+function extractInstagramPostId(url: string): string | null {
+  // Match Instagram post URL patterns:
+  // https://www.instagram.com/p/ABC123/
+  // https://instagram.com/p/ABC123/
+  // https://www.instagram.com/reel/ABC123/
+  const match = url.match(/instagram\.com\/(p|reel)\/([A-Za-z0-9_-]+)/);
+  return match ? match[2] : null;
+}
+
+// Handle GET /beta-videos?problem=<slug>
+async function handleGetBetaVideos(
+  request: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  const url = new URL(request.url);
+  const problemSlug = url.searchParams.get('problem');
+
+  if (!problemSlug) {
+    return jsonResponse({ error: 'Missing problem parameter' }, 400, corsHeaders);
+  }
+
+  try {
+    // Query database for approved videos
+    const { results } = await env.DB.prepare(
+      'SELECT id, instagram_url, submitted_at FROM beta_videos WHERE problem_slug = ? AND status = ? ORDER BY submitted_at DESC'
+    ).bind(problemSlug, 'approved').all();
+
+    return jsonResponse({ videos: results }, 200, corsHeaders);
+  } catch (error) {
+    console.error('Database error:', error);
+    return jsonResponse({ error: 'Failed to fetch beta videos' }, 500, corsHeaders);
+  }
+}
+
+// Handle POST /beta-videos
+async function handleSubmitBetaVideo(
+  request: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  try {
+    // Parse request body
+    const body = await request.json() as { problemSlug?: string; instagramUrl?: string };
+    const { problemSlug, instagramUrl } = body;
+
+    // Validate inputs
+    if (!problemSlug || !instagramUrl) {
+      return jsonResponse({ error: 'Missing required fields' }, 400, corsHeaders);
+    }
+
+    // Extract Instagram post ID from URL
+    const postId = extractInstagramPostId(instagramUrl);
+    if (!postId) {
+      return jsonResponse({ error: 'Invalid Instagram URL format' }, 400, corsHeaders);
+    }
+
+    // Check for duplicate
+    const existing = await env.DB.prepare(
+      'SELECT id FROM beta_videos WHERE problem_slug = ? AND instagram_post_id = ?'
+    ).bind(problemSlug, postId).first();
+
+    if (existing) {
+      return jsonResponse({ error: 'Video already submitted for this problem' }, 409, corsHeaders);
+    }
+
+    // Insert into database
+    const result = await env.DB.prepare(
+      'INSERT INTO beta_videos (problem_slug, instagram_url, instagram_post_id, submitted_at, status) VALUES (?, ?, ?, ?, ?)'
+    ).bind(
+      problemSlug,
+      instagramUrl,
+      postId,
+      new Date().toISOString(),
+      'approved'  // Auto-approve for MVP
+    ).run();
+
+    return jsonResponse({ success: true, id: result.meta.last_row_id }, 201, corsHeaders);
+  } catch (error) {
+    console.error('Submission error:', error);
+    return jsonResponse({ error: 'Failed to submit beta video' }, 500, corsHeaders);
+  }
 }

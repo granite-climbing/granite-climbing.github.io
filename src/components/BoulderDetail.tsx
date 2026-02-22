@@ -44,6 +44,12 @@ interface InstagramMedia {
   thumbnail_url?: string;
 }
 
+interface SubmittedVideo {
+  id: number;
+  instagramUrl: string;
+  submittedAt: string;
+}
+
 export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithProblems }: BoulderDetailProps) {
   const [currentTopoIndex, setCurrentTopoIndex] = useState(0);
   const [selectedProblemForImage, setSelectedProblemForImage] = useState<Problem | null>(null);
@@ -54,6 +60,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
   const [selectedTopo, setSelectedTopo] = useState<TopoWithProblems | null>(null);
   const [copiedHashtag, setCopiedHashtag] = useState(false);
   const [instagramMedia, setInstagramMedia] = useState<InstagramMedia[]>([]);
+  const [submittedVideos, setSubmittedVideos] = useState<SubmittedVideo[]>([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
@@ -116,31 +123,52 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
     setSelectedTopo(topo);
     setSheetOpen(true);
     setInstagramMedia([]);
+    setSubmittedVideos([]);
     setLoadingMedia(true);
 
     setTimeout(() => {
       setSheetVisible(true);
     }, 10);
 
-    if (problem.hashtag) {
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_INSTAGRAM_API_URL || '';
-        const cleanHashtag = problem.hashtag.replace(/^#/, '');
-        const response = await fetch(`${apiUrl}?hashtag=${encodeURIComponent(cleanHashtag)}`);
+    const apiUrl = process.env.NEXT_PUBLIC_INSTAGRAM_API_URL || '';
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.data && Array.isArray(data.data)) {
-            setInstagramMedia(data.data);
-          }
+    // Fetch both hashtag media and submitted videos in parallel
+    await Promise.all([
+      // Existing hashtag search
+      problem.hashtag ? fetchHashtagMedia(problem.hashtag, apiUrl) : Promise.resolve(),
+      // NEW: Fetch submitted videos
+      fetchSubmittedVideos(problem.slug, apiUrl)
+    ]);
+
+    setLoadingMedia(false);
+  };
+
+  const fetchHashtagMedia = async (hashtag: string, apiUrl: string) => {
+    try {
+      const cleanHashtag = hashtag.replace(/^#/, '');
+      const response = await fetch(`${apiUrl}?hashtag=${encodeURIComponent(cleanHashtag)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data && Array.isArray(data.data)) {
+          setInstagramMedia(data.data);
         }
-      } catch (error) {
-        console.error('Failed to fetch Instagram media:', error);
-      } finally {
-        setLoadingMedia(false);
       }
-    } else {
-      setLoadingMedia(false);
+    } catch (error) {
+      console.error('Failed to fetch hashtag media:', error);
+    }
+  };
+
+  const fetchSubmittedVideos = async (problemSlug: string, apiUrl: string) => {
+    try {
+      const response = await fetch(`${apiUrl}/beta-videos?problem=${encodeURIComponent(problemSlug)}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.videos && Array.isArray(data.videos)) {
+          setSubmittedVideos(data.videos);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch submitted videos:', error);
     }
   };
 
@@ -187,10 +215,37 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
     }, 300);
   };
 
-  const handleSubmitInstagramLink = () => {
-    // TODO: Submit Instagram link to backend
-    console.log('Instagram link:', instagramLink);
-    handleCloseUploadModal();
+  const handleSubmitInstagramLink = async () => {
+    if (!selectedProblem || !instagramLink.trim()) return;
+
+    const apiUrl = process.env.NEXT_PUBLIC_INSTAGRAM_API_URL || '';
+
+    try {
+      const response = await fetch(`${apiUrl}/beta-videos`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          problemSlug: selectedProblem.slug,
+          instagramUrl: instagramLink.trim(),
+        }),
+      });
+
+      if (response.ok) {
+        // Success: refresh beta videos and close modal
+        await fetchSubmittedVideos(selectedProblem.slug, apiUrl);
+        handleCloseUploadModal();
+        // Optional: Show success message
+      } else {
+        const error = await response.json();
+        console.error('Submission failed:', error);
+        alert(error.error || '제출에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Failed to submit beta video:', error);
+      alert('네트워크 오류가 발생했습니다.');
+    }
   };
 
   useEffect(() => {
@@ -352,17 +407,16 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                 베타 영상 올리기
               </button>
 
-              {selectedProblem.hashtag && (
-                <>
-                  <div className={styles.sheetGrid}>
-                    {loadingMedia ? (
-                      <div className={styles.gridLoading}>베타 영상 불러오는 중...</div>
-                    ) : instagramMedia.length === 0 ? (
-                      <div className={styles.gridLoading}>등록된 베타 영상이 없습니다</div>
-                    ) : (
-                      instagramMedia.slice(0, 9).map((media) => (
+              {(selectedProblem.hashtag || submittedVideos.length > 0) && (
+                <div className={styles.sheetGrid}>
+                  {loadingMedia ? (
+                    <div className={styles.gridLoading}>베타 영상 불러오는 중...</div>
+                  ) : (
+                    <>
+                      {/* Display hashtag media */}
+                      {instagramMedia.slice(0, 9).map((media) => (
                         <a
-                          key={media.id}
+                          key={`hashtag-${media.id}`}
                           href={media.permalink}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -379,10 +433,31 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                             </div>
                           )}
                         </a>
-                      ))
-                    )}
-                  </div>
-                </>
+                      ))}
+
+                      {/* Display submitted videos */}
+                      {submittedVideos.map((video) => (
+                        <a
+                          key={`submitted-${video.id}`}
+                          href={video.instagramUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.gridItem}
+                        >
+                          <div className={styles.gridPlaceholder}>
+                            <div className={styles.gridVideoIcon}>
+                              <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
+                            </div>
+                          </div>
+                        </a>
+                      ))}
+
+                      {instagramMedia.length === 0 && submittedVideos.length === 0 && (
+                        <div className={styles.gridLoading}>등록된 베타 영상이 없습니다</div>
+                      )}
+                    </>
+                  )}
+                </div>
               )}
             </div>
           </div>
