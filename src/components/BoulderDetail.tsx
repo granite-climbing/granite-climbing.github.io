@@ -8,6 +8,8 @@ interface Boulder {
   title: string;
   thumbnail: string;
   description: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface Problem {
