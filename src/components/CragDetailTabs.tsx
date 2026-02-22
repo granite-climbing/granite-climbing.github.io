@@ -372,7 +372,7 @@ function RouteTab({ crag, problems, selectedBoulder, onClearFilter }: { crag: Cr
         <div className={styles.routeList}>
           {sortedProblems.map((problem, index) => (
             <a
-              href={`/crag/${crag.slug}/boulder/${problem.boulderSlug}`}
+              href={`/crag/${crag.slug}/boulder/${problem.boulderSlug}#${problem.topoSlug}`}
               key={`${problem.topoSlug}-${problem.slug}-${index}`}
               className={styles.routeRow}
             >

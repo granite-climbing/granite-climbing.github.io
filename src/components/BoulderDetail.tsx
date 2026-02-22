@@ -59,6 +59,19 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
   const currentTopo = toposWithProblems[currentTopoIndex];
   const totalTopos = toposWithProblems.length;
 
+  // Initialize topo index from URL hash
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.slice(1); // Remove '#' from hash
+      if (hash) {
+        const topoIndex = toposWithProblems.findIndex((topo) => topo.slug === hash);
+        if (topoIndex !== -1) {
+          setCurrentTopoIndex(topoIndex);
+        }
+      }
+    }
+  }, [toposWithProblems]);
+
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;

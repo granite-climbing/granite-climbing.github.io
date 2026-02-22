@@ -1,0 +1,6 @@
+name = "granite-instagram-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+ALLOWED_ORIGIN = "https://granite-climbing.github.io"
