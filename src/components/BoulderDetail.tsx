@@ -458,53 +458,57 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                       ))}
 
                       {/* Display submitted videos */}
-                      {submittedVideos.map((video) => (
-                        <div
-                          key={`submitted-${video.id}`}
-                          className={styles.gridItem}
-                          onClick={() => {
-                            // Try to open Instagram app first, fallback to web
-                            const postId = video.instagramUrl.match(/\/(p|reel)\/([A-Za-z0-9_-]+)/)?.[2];
-                            if (postId) {
-                              const appUrl = `instagram://media?id=${postId}`;
-                              const iframe = document.createElement('iframe');
-                              iframe.style.display = 'none';
-                              iframe.src = appUrl;
-                              document.body.appendChild(iframe);
+                      {submittedVideos.map((video) => {
+                        const postId = video.instagramUrl?.match(/\/(p|reel)\/([A-Za-z0-9_-]+)/)?.[2];
+                        const embedThumbnail = postId ? `https://www.instagram.com/p/${postId}/media/?size=m` : null;
 
-                              // Fallback to web after 1 second
-                              setTimeout(() => {
+                        return (
+                          <div
+                            key={`submitted-${video.id}`}
+                            className={styles.gridItem}
+                            onClick={() => {
+                              // Try to open Instagram app first, fallback to web
+                              if (postId) {
+                                const appUrl = `instagram://media?id=${postId}`;
+                                const iframe = document.createElement('iframe');
+                                iframe.style.display = 'none';
+                                iframe.src = appUrl;
+                                document.body.appendChild(iframe);
+
+                                // Fallback to web after 1 second
+                                setTimeout(() => {
+                                  window.open(video.instagramUrl, '_blank');
+                                }, 1000);
+
+                                // Cleanup
+                                setTimeout(() => {
+                                  document.body.removeChild(iframe);
+                                }, 2000);
+                              } else {
                                 window.open(video.instagramUrl, '_blank');
-                              }, 1000);
-
-                              // Cleanup
-                              setTimeout(() => {
-                                document.body.removeChild(iframe);
-                              }, 2000);
-                            } else {
-                              window.open(video.instagramUrl, '_blank');
-                            }
-                          }}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          {video.thumbnailUrl ? (
-                            <img
-                              src={video.thumbnailUrl}
-                              alt="Beta video"
-                              className={styles.gridImage}
-                            />
-                          ) : (
-                            <div className={styles.gridPlaceholder}>
-                              <div className={styles.gridVideoIcon}>
-                                <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
+                              }
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {embedThumbnail ? (
+                              <img
+                                src={embedThumbnail}
+                                alt="Beta video"
+                                className={styles.gridImage}
+                              />
+                            ) : (
+                              <div className={styles.gridPlaceholder}>
+                                <div className={styles.gridVideoIcon}>
+                                  <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
+                                </div>
                               </div>
+                            )}
+                            <div className={styles.gridVideoIcon}>
+                              <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
                             </div>
-                          )}
-                          <div className={styles.gridVideoIcon}>
-                            <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       {instagramMedia.length === 0 && submittedVideos.length === 0 && (
                         <div className={styles.gridLoading}>등록된 베타 영상이 없습니다</div>

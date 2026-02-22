@@ -33,7 +33,15 @@ export async function handleGetBetaVideos(
       'SELECT id, instagram_url, thumbnail_url, submitted_at FROM beta_videos WHERE problem_slug = ? AND status = ? ORDER BY submitted_at DESC'
     ).bind(problemSlug, 'approved').all();
 
-    return jsonResponse({ videos: results }, 200, corsHeaders);
+    // Convert snake_case to camelCase for frontend
+    const videos = results.map((row: any) => ({
+      id: row.id,
+      instagramUrl: row.instagram_url,
+      thumbnailUrl: row.thumbnail_url,
+      submittedAt: row.submitted_at,
+    }));
+
+    return jsonResponse({ videos }, 200, corsHeaders);
   } catch (error) {
     console.error('Database error:', error);
     return jsonResponse({ error: 'Failed to fetch beta videos' }, 500, corsHeaders);
