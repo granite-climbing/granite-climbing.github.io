@@ -278,14 +278,24 @@ function BoulderTab({ crag, boulders, onBoulderClick }: { crag: Crag; boulders: 
                   className={styles.boulderMapButton}
                   onClick={(e) => {
                     e.stopPropagation();
-                    const kakaoMapUrl = `kakaomap://look?p=${boulder.latitude},${boulder.longitude}`;
                     const webFallbackUrl = `https://map.kakao.com/link/map/${encodeURIComponent(boulder.title)},${boulder.latitude},${boulder.longitude}`;
 
-                    // Try to open Kakao Map app first, fallback to web
-                    window.location.href = kakaoMapUrl;
-                    setTimeout(() => {
+                    // Try to open Kakao Map app, fallback to web on error
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = `kakaomap://look?p=${boulder.latitude},${boulder.longitude}`;
+                    document.body.appendChild(iframe);
+
+                    // If app doesn't open within 1 second, open web version
+                    const timer = setTimeout(() => {
                       window.open(webFallbackUrl, '_blank');
-                    }, 500);
+                    }, 1000);
+
+                    // Clean up
+                    setTimeout(() => {
+                      clearTimeout(timer);
+                      document.body.removeChild(iframe);
+                    }, 2000);
                   }}
                   aria-label="카카오맵에서 위치 보기"
                 >

@@ -26,6 +26,8 @@ function getAllBoulders() {
       title: data.title || '',
       thumbnail: getAssetPath(data.thumbnail || ''),
       description: data.description || '',
+      latitude: data.latitude,
+      longitude: data.longitude,
     };
   });
 }
