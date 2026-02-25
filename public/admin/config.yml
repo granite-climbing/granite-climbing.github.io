@@ -113,6 +113,8 @@ collections:
       - { label: 이름, name: title, widget: string }
       - { label: 썸네일 이미지, name: thumbnail, widget: image, required: false }
       - { label: 설명, name: description, widget: text, required: false }
+      - { label: 위도 (Latitude), name: latitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "볼더의 위도 좌표 (예: 37.423499)" }
+      - { label: 경도 (Longitude), name: longitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "볼더의 경도 좌표 (예: 126.92643)" }
 
   # 1-2. Topo (토포) - Boulder 하위
   - name: topos
