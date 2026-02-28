@@ -1,10 +1,10 @@
 ---
-slug: Green Mamba
+slug: Black Mamba SIT
 topo: Memorial_Boulder_2
-title: Green Mamba
-grade: V8
+title: Black Mamba SIT
+grade: V7
 index: 3
-hashtag: "#현충_Green_Mamba"
-fa: "@teein6482"
+hashtag: "#현충_Black_Mamba_SIT"
+fa: "@armstdong"
 description: SIT START
 ---
