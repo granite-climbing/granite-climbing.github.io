@@ -16,8 +16,7 @@ export default async function Home() {
       <main>
         <HeroBanner
           image={settings.heroImage}
-          slogan1={settings.slogan1}
-          slogan2={settings.slogan2}
+          slogan={settings.slogan}
         />
         <CragSection crags={crags} />
         <CultureSection items={cultureItems} />

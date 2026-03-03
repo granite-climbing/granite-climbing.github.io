@@ -37,8 +37,7 @@ collections:
         file: content/settings/site.md
         fields:
           - { label: 히어로 이미지, name: heroImage, widget: image }
-          - { label: 슬로건 1, name: slogan1, widget: string, default: "DREAM to DREAM!" }
-          - { label: 슬로건 2, name: slogan2, widget: string, default: "WORK LESS, CLIMB MORE!" }
+          - { label: 슬로건, name: slogan, widget: text, default: "DREAM to DREAM!", hint: "줄바꿈(Enter)을 사용하면 여러 줄로 표시됩니다." }
 
   # 1. Crag (암장 정보)
   - name: crags

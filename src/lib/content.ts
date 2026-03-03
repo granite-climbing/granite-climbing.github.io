@@ -111,8 +111,7 @@ export function getSiteSettings() {
   if (!fs.existsSync(filePath)) {
     return {
       heroImage: getAssetPath('/images/hero-sample.jpg'),
-      slogan1: 'DREAM to DREAM!',
-      slogan2: 'WORK LESS, CLIMB MORE!',
+      slogan: 'DREAM to DREAM!',
     };
   }
 
@@ -121,8 +120,7 @@ export function getSiteSettings() {
 
   return {
     heroImage: getAssetPath(data.heroImage || '/images/hero-sample.jpg'),
-    slogan1: data.slogan1 || 'DREAM to DREAM!',
-    slogan2: data.slogan2 || 'WORK LESS, CLIMB MORE!',
+    slogan: data.slogan || 'DREAM to DREAM!',
   };
 }
 
