@@ -41,9 +41,9 @@ export default function Header() {
   return (
     <>
       <header className={styles.header}>
-        <div className={styles.logo}>
+        <a href="/" className={styles.logo}>
           <img src={getAssetPath('/images/logo.png')} alt="Granite" />
-        </div>
+        </a>
         <button
           className={styles.hamburger}
           onClick={openMenu}
