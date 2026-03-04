@@ -371,6 +371,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
 
                 <div className={styles.problemSubInfo}>
                   {problem.fa && <div className={styles.problemFa}>FA: {problem.fa}</div>}
+                  {problem.description && <div className={styles.problemDescription}>{problem.description}</div>}
                 </div>
 
                 <div className={styles.problemMeta}>
