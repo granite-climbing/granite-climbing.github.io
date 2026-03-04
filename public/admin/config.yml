@@ -93,6 +93,14 @@ collections:
           - { label: "V15", value: "V15" }
           - { label: "V16", value: "V16" }
       - { label: 설명, name: description, widget: text, required: false }
+      - { label: 주소, name: address, widget: string, required: false }
+      - { label: "How to get there", name: howToGetThere, widget: text, required: false, hint: "찾아오는 방법을 입력하세요. (예: 지하철 1호선 안양역에서 도보 20분)" }
+      - { label: 위도 (Latitude), name: latitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "암장의 위도 좌표 (예: 37.4194)" }
+      - { label: 경도 (Longitude), name: longitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "암장의 경도 좌표 (예: 126.9323)" }
+      - { label: 지도 이미지, name: mapImage, widget: image, required: false }
+      - { label: 지도 링크, name: mapLink, widget: string, required: false }
+      - { label: 주차장 링크, name: parkingSpot, widget: string, required: false }
+      - { label: 카페 링크, name: cafeLink, widget: string, required: false }
 
   # 1-1. Boulder (볼더) - Crag 하위
   - name: boulders
