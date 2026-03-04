@@ -1,6 +1,6 @@
 ---
-slug: Memorial Heel SIT
-topo: Memorial_Boulder_6
+slug: memorial-heel-sit
+topo: memorial-boulder-6
 title: 현충힐 SIT
 grade: V7
 index: 1
