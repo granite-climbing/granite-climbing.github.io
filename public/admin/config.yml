@@ -99,8 +99,10 @@ collections:
       - { label: 경도 (Longitude), name: longitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "암장의 경도 좌표 (예: 126.9323)" }
       - { label: 지도 이미지, name: mapImage, widget: image, required: false }
       - { label: 지도 링크, name: mapLink, widget: string, required: false }
-      - { label: 주차장 링크, name: parkingSpot, widget: string, required: false }
-      - { label: 카페 링크, name: cafeLink, widget: string, required: false }
+      - { label: 주차장 위도 (Parking Latitude), name: parkingLatitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "주차장 위도 좌표. 입력 시 카카오맵 버튼이 표시됩니다." }
+      - { label: 주차장 경도 (Parking Longitude), name: parkingLongitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "주차장 경도 좌표." }
+      - { label: 카페 위도 (Cafe Latitude), name: cafeLatitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "카페 위도 좌표. 입력 시 카카오맵 버튼이 표시됩니다." }
+      - { label: 카페 경도 (Cafe Longitude), name: cafeLongitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "카페 경도 좌표." }
 
   # 1-1. Boulder (볼더) - Crag 하위
   - name: boulders

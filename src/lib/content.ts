@@ -283,6 +283,10 @@ export function getCragBySlug(slug: string) {
     mapLink: data.mapLink || '',
     latitude: data.latitude || undefined,
     longitude: data.longitude || undefined,
+    parkingLatitude: data.parkingLatitude || undefined,
+    parkingLongitude: data.parkingLongitude || undefined,
+    cafeLatitude: data.cafeLatitude || undefined,
+    cafeLongitude: data.cafeLongitude || undefined,
   };
 }
 
