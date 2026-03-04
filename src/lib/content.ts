@@ -330,7 +330,13 @@ export function getProblemsByTopo(topoSlug: string) {
       image: problem.image,
       description: problem.description,
       index: problem.index,
-    }));
+    }))
+    .sort((a, b) => {
+      if (a.index == null && b.index == null) return 0;
+      if (a.index == null) return 1;
+      if (b.index == null) return -1;
+      return a.index - b.index;
+    });
 }
 
 // Crag의 모든 Problem 목록 가져오기 (Route 탭용 - Topo 정보 포함)
