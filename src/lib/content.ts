@@ -329,6 +329,7 @@ export function getProblemsByTopo(topoSlug: string) {
       fa: problem.fa,
       image: problem.image,
       description: problem.description,
+      index: problem.index,
     }));
 }
 
