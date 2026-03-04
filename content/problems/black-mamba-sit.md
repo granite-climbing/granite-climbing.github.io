@@ -1,6 +1,6 @@
 ---
 slug: black-mamba-sit
-topo: memorial-boulder-2
+topo: hyunchung-boulder-2
 title: Black Mamba SIT
 grade: V7
 index: 3

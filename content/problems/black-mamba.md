@@ -1,6 +1,6 @@
 ---
 slug: black-mamba
-topo: memorial-boulder-2
+topo: hyunchung-boulder-2
 title: Black Mamba
 grade: V6
 index: 1

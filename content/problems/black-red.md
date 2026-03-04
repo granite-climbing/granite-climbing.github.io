@@ -1,6 +1,6 @@
 ---
 slug: black-red
-topo: memorial-boulder-1
+topo: hyunchung-boulder-1
 title: ⚫️🔴
 grade: V5
 index: 2

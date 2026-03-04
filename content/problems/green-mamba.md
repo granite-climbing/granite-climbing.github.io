@@ -1,6 +1,6 @@
 ---
 slug: green-mamba
-topo: memorial-boulder-2
+topo: hyunchung-boulder-2
 title: Green Mamba
 grade: V8
 index: 2

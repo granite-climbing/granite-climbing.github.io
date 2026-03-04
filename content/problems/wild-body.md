@@ -1,6 +1,6 @@
 ---
 slug: wild-body
-topo: memorial-boulder-4
+topo: hyunchung-boulder-4
 title: Wild Body
 grade: V2
 index: 1
