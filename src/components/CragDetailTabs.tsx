@@ -18,7 +18,6 @@ interface Crag {
   parkingSpot: string;
   cafeLink: string;
   mapImage: string;
-  mapLink: string;
   latitude?: number;
   longitude?: number;
   parkingLatitude?: number;
@@ -190,12 +189,7 @@ function InfoTab({ crag }: { crag: Crag }) {
             </div>
           </>
         ) : crag.mapImage ? (
-          <a href={crag.mapLink} target="_blank" rel="noopener noreferrer">
-            <img src={crag.mapImage} alt="지도" className={styles.mapImage} />
-            <div className={styles.mapOverlay}>
-              <span className={styles.mapLabel}>지도 보기</span>
-            </div>
-          </a>
+          <img src={crag.mapImage} alt="지도" className={styles.mapImage} />
         ) : (
           <div className={styles.mapPlaceholder}>
             <span>지도 준비중</span>
@@ -476,90 +470,17 @@ function RouteTab({ crag, problems, selectedBoulder, onClearFilter }: { crag: Cr
 }
 
 function MapTab({ crag }: { crag: Crag }) {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const [isMapLoaded, setIsMapLoaded] = useState(false);
-
-  const initializeMap = () => {
-    if (!mapContainerRef.current || !crag.latitude || !crag.longitude) return;
-    if (typeof window === 'undefined' || !window.kakao?.maps) return;
-
-    window.kakao.maps.load(() => {
-      if (!mapContainerRef.current) return;
-
-      const position = new window.kakao.maps.LatLng(crag.latitude!, crag.longitude!);
-      const options = {
-        center: position,
-        level: 3,
-      };
-
-      const map = new window.kakao.maps.Map(mapContainerRef.current, options);
-
-      const marker = new window.kakao.maps.Marker({
-        position: position,
-        map: map,
-      });
-
-      const infoWindow = new window.kakao.maps.InfoWindow({
-        content: `<div style="padding:5px;font-size:12px;">${crag.title}</div>`,
-      });
-      infoWindow.open(map, marker);
-
-      setIsMapLoaded(true);
-    });
-  };
-
-  useEffect(() => {
-    // 스크립트가 이미 로드되어 있으면 바로 초기화
-    if (window.kakao?.maps) {
-      initializeMap();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [crag.latitude, crag.longitude]);
-
-  const handleScriptLoad = () => {
-    initializeMap();
-  };
-
-  if (!crag.latitude || !crag.longitude) {
+  if (!crag.mapImage) {
     return (
-      <div className={styles.mapTab}>
-        {crag.mapImage ? (
-          <a href={crag.mapLink} target="_blank" rel="noopener noreferrer" className={styles.fullMap}>
-            <img src={crag.mapImage} alt="지도" />
-          </a>
-        ) : (
-          <div className={styles.placeholderTab}>
-            <p>지도가 준비중입니다.</p>
-          </div>
-        )}
+      <div className={styles.placeholderTab}>
+        <p>지도가 준비중입니다.</p>
       </div>
     );
   }
 
   return (
     <div className={styles.mapTab}>
-      <Script
-        src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}&autoload=false`}
-        strategy="afterInteractive"
-        onLoad={handleScriptLoad}
-      />
-      <div ref={mapContainerRef} className={styles.kakaoMap}>
-        {!isMapLoaded && (
-          <div className={styles.mapLoading}>
-            <p>지도를 불러오는 중...</p>
-          </div>
-        )}
-      </div>
-      {crag.mapLink && (
-        <a
-          href={crag.mapLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.mapExternalLink}
-        >
-          카카오맵에서 보기
-        </a>
-      )}
+      <img src={crag.mapImage} alt="약도" />
     </div>
   );
 }

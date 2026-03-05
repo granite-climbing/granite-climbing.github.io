@@ -280,7 +280,6 @@ export function getCragBySlug(slug: string) {
     parkingSpot: data.parkingSpot || '',
     cafeLink: data.cafeLink || '',
     mapImage: getAssetPath(data.mapImage || ''),
-    mapLink: data.mapLink || '',
     latitude: data.latitude || undefined,
     longitude: data.longitude || undefined,
     parkingLatitude: data.parkingLatitude || undefined,
