@@ -1,16 +1,18 @@
 ---
-difficultyMax: V10
-slug: hyunchung
-latitude: 37.5012
-thumbnail: /images/crag-sample-2.png
-longitude: 126.9783
-address: 서울특별시 동작구 현충로 210
-mapLink: https://map.kakao.com
-difficultyMin: V1
-cafeLink: https://map.kakao.com/cafe
 title: 검단산
-howToGetThere: 지하철 4호선 동작역 하차 후 도보 15분
-parkingSpot: https://map.kakao.com/parking
+thumbnail: /images/crag-sample-2.png
+difficultyMin: V1
+difficultyMax: V10
 description: ""
+address: 경기 하남시 창우동 산 26-5
+howToGetThere: 하남검단산역 하차 후 도보 20분
+latitude: 37.531034
+parkingLatitude: 37.53098
+slug: hyunchung
+longitude: 127.236287
+mapLink: https://map.kakao.com
+parkingLongitude: 127.235566
+cafeLink: https://map.kakao.com/cafe
+parkingSpot: https://map.kakao.com/parking
 mapImage: /images/map-sample.png
 ---
