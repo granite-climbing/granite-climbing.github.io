@@ -158,6 +158,7 @@ collections:
         search_fields: [title, boulder]
         value_field: slug
         display_fields: [title, boulder]
+        options_length: 100
         hint: "문제가 속한 토포를 선택하세요"
       - { label: 이름, name: title, widget: string }
       - label: 난이도
