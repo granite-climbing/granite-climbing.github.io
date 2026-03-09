@@ -1,5 +1,5 @@
 ---
-slug: the essence of rock RIGHT
+slug: Standard of rock RIGHT
 topo: hyunchung-boulder-8
 title: 바위의 정석 RIGHT
 grade: V5
