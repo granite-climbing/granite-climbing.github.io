@@ -1,6 +1,10 @@
 .container {
   background-color: #fff;
   padding-top: 57px;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* Boulder Image */
@@ -86,9 +90,7 @@
   aspect-ratio: 4 / 3;
   overflow: hidden;
   background: #f0f0f0;
-  position: sticky;
-  top: 0;
-  transition: all 0.3s ease;
+  flex-shrink: 0;
   z-index: 5;
 }
 
@@ -145,6 +147,7 @@
   padding: 16px;
   border-bottom: 1px solid #eee;
   background: #fff;
+  flex-shrink: 0;
   position: relative;
   z-index: 6;
 }
@@ -185,6 +188,9 @@
 /* Problem List */
 .problemList {
   padding: 0 16px;
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .problemImageContainer {
