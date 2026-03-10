@@ -1,28 +1,10 @@
 # 로컬 개발용 설정 (decap-server 필요)
 local_backend: false
 
-# Use DecapBridge classic auth (required)
 backend:
-  name: git-gateway
+  name: github
   repo: granite-climbing/granite-climbing.github.io
   branch: main
-  identity_url: https://auth.decapbridge.com/sites/ece8f802-f88d-46e0-94b9-d927b657f7ad
-  gateway_url: https://gateway.decapbridge.com
-
-  # See who did what (optional)
-  commit_messages:
-    create: Create {{collection}} "{{slug}}" - {{author-name}} <{{author-login}}> via DecapBridge
-    update: Update {{collection}} "{{slug}}" - {{author-name}} <{{author-login}}> via DecapBridge
-    delete: Delete {{collection}} "{{slug}}" - {{author-name}} <{{author-login}}> via DecapBridge
-    uploadMedia: Upload "{{path}}" - {{author-name}} <{{author-login}}> via DecapBridge
-    deleteMedia: Delete "{{path}}" - {{author-name}} <{{author-login}}> via DecapBridge
-    openAuthoring: Message {{message}} - {{author-name}} <{{author-login}}> via DecapBridge
-
-# Better Decap + Bridge logo (optional)
-logo_url: https://decapbridge.com/decapcms-with-bridge.svg
-
-# Add site links in Decap CMS (optional)
-site_url: https://granite-climbing.github.io
 
 media_folder: public/images
 public_folder: /images
@@ -37,7 +19,8 @@ collections:
         file: content/settings/site.md
         fields:
           - { label: 히어로 이미지, name: heroImage, widget: image }
-          - { label: 슬로건, name: slogan, widget: text, default: "DREAM to DREAM!", hint: "줄바꿈(Enter)을 사용하면 여러 줄로 표시됩니다." }
+          - { label: 슬로건 1, name: slogan1, widget: string, default: "DREAM to DREAM!" }
+          - { label: 슬로건 2, name: slogan2, widget: string, default: "WORK LESS, CLIMB MORE!" }
 
   # 1. Crag (암장 정보)
   - name: crags
@@ -94,15 +77,6 @@ collections:
           - { label: "V15", value: "V15" }
           - { label: "V16", value: "V16" }
       - { label: 설명, name: description, widget: text, required: false }
-      - { label: 주소, name: address, widget: string, required: false }
-      - { label: "How to get there", name: howToGetThere, widget: text, required: false, hint: "찾아오는 방법을 입력하세요. (예: 지하철 1호선 안양역에서 도보 20분)" }
-      - { label: 위도 (Latitude), name: latitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "암장의 위도 좌표 (예: 37.4194)" }
-      - { label: 경도 (Longitude), name: longitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "암장의 경도 좌표 (예: 126.9323)" }
-      - { label: 지도 이미지, name: mapImage, widget: image, required: false }
-      - { label: 주차장 위도 (Parking Latitude), name: parkingLatitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "주차장 위도 좌표. 입력 시 카카오맵 버튼이 표시됩니다." }
-      - { label: 주차장 경도 (Parking Longitude), name: parkingLongitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "주차장 경도 좌표." }
-      - { label: 카페 위도 (Cafe Latitude), name: cafeLatitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "카페 위도 좌표. 입력 시 카카오맵 버튼이 표시됩니다." }
-      - { label: 카페 경도 (Cafe Longitude), name: cafeLongitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "카페 경도 좌표." }
 
   # 1-1. Boulder (볼더) - Crag 하위
   - name: boulders
@@ -119,12 +93,9 @@ collections:
         search_fields: [title]
         value_field: slug
         display_fields: [title]
-        options_length: 100
       - { label: 이름, name: title, widget: string }
       - { label: 썸네일 이미지, name: thumbnail, widget: image, required: false }
       - { label: 설명, name: description, widget: text, required: false }
-      - { label: 위도 (Latitude), name: latitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "볼더의 위도 좌표 (예: 37.423499)" }
-      - { label: 경도 (Longitude), name: longitude, widget: number, required: false, value_type: "float", step: 0.000001, hint: "볼더의 경도 좌표 (예: 126.92643)" }
 
   # 1-2. Topo (토포) - Boulder 하위
   - name: topos
@@ -160,7 +131,6 @@ collections:
         search_fields: [title, boulder]
         value_field: slug
         display_fields: [title, boulder]
-        options_length: 100
         hint: "문제가 속한 토포를 선택하세요"
       - { label: 이름, name: title, widget: string }
       - label: 난이도
@@ -185,7 +155,6 @@ collections:
           - { label: "V14", value: "V14" }
           - { label: "V15", value: "V15" }
           - { label: "V16", value: "V16" }
-      - { label: "문제 번호 (Index)", name: index, widget: number, required: false, value_type: "int", min: 1, hint: "토포 내에서 문제의 순서 번호 (1부터 시작). 입력하지 않으면 자동으로 순서대로 번호가 부여됩니다." }
       - { label: 해시태그, name: hashtag, widget: string, required: false, hint: "베타 영상 검색용 인스타그램 해시태그 (예: granite_울산천_시작의길)" }
       - { label: "FA (초등자 인스타 ID)", name: fa, widget: string, required: false, hint: "초등자 인스타그램 ID (예: @yeochan6409)" }
       - { label: 문제 이미지, name: image, widget: image, required: false, hint: "문제 이미지는 선택사항입니다" }
