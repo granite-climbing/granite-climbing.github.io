@@ -414,6 +414,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                 구 안내 문구
               </p>
 
+              {/* 캡션 복사 버튼 임시 비활성화
               <div className={styles.captionBox}>
                 <div className={styles.captionLabel}>캡션</div>
                 <div className={styles.captionText}>
@@ -425,6 +426,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
               <button className={styles.sheetCta} onClick={handleCopyCaption}>
                 {copiedHashtag ? '✓ 현재 복사됨 → Instagram 열기' : '현재 복사하고 → Instagram 열기'}
               </button>
+              */}
 
               <button className={styles.sheetCtaSecondary} onClick={handleOpenUploadModal}>
                 베타 영상 올리기
