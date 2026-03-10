@@ -103,8 +103,6 @@ collections:
     slug: "{{slug}}"
     fields:
       - { label: Slug, name: slug, widget: string }
-      - { label: 이름, name: title, widget: string }
-      - { label: 썸네일 이미지, name: thumbnail, widget: image, required: false }
       - label: 소속 암장 (Crag)
         name: crag
         widget: relation
@@ -112,6 +110,8 @@ collections:
         search_fields: [title]
         value_field: slug
         display_fields: [title]
+      - { label: 이름, name: title, widget: string }
+      - { label: 썸네일 이미지, name: thumbnail, widget: image, required: false }
       - { label: 설명, name: description, widget: text, required: false }
 
   # 1-2. Topo (토포) - Boulder 하위
