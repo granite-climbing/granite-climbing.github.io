@@ -113,6 +113,8 @@ collections:
       - { label: 이름, name: title, widget: string }
       - { label: 썸네일 이미지, name: thumbnail, widget: image, required: false }
       - { label: 설명, name: description, widget: text, required: false }
+      - { label: 위도 (Latitude), name: latitude, widget: number, value_type: float, required: false, hint: "카카오맵 지도 연동용 위도 (예: 37.423499)" }
+      - { label: 경도 (Longitude), name: longitude, widget: number, value_type: float, required: false, hint: "카카오맵 지도 연동용 경도 (예: 126.92643)" }
 
   # 1-2. Topo (토포) - Boulder 하위
   - name: topos
