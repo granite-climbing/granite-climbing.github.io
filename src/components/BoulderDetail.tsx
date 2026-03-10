@@ -466,32 +466,13 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                         const embedThumbnail = postId ? `https://www.instagram.com/p/${postId}/media/?size=m` : null;
 
                         return (
-                          <div
+                          <a
                             key={`submitted-${video.id}`}
                             className={styles.gridItem}
-                            onClick={() => {
-                              // Try to open Instagram app first, fallback to web
-                              if (postId) {
-                                const appUrl = `instagram://media?id=${postId}`;
-                                const iframe = document.createElement('iframe');
-                                iframe.style.display = 'none';
-                                iframe.src = appUrl;
-                                document.body.appendChild(iframe);
-
-                                // Fallback to web after 1 second
-                                setTimeout(() => {
-                                  window.open(video.instagramUrl, '_blank');
-                                }, 1000);
-
-                                // Cleanup
-                                setTimeout(() => {
-                                  document.body.removeChild(iframe);
-                                }, 2000);
-                              } else {
-                                window.open(video.instagramUrl, '_blank');
-                              }
-                            }}
-                            style={{ cursor: 'pointer' }}
+                            href={video.instagramUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ cursor: 'pointer', display: 'block' }}
                           >
                             {embedThumbnail ? (
                               <img
@@ -509,7 +490,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                             <div className={styles.gridVideoIcon}>
                               <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
                             </div>
-                          </div>
+                          </a>
                         );
                       })}
 
