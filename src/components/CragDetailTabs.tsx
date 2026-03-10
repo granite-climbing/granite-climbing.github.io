@@ -228,44 +228,30 @@ function InfoTab({ crag }: { crag: Crag }) {
 
       <div className={styles.buttons}>
         {crag.parkingLatitude && crag.parkingLongitude && (
-          <button
+          <a
             className={styles.button}
-            onClick={() => {
-              const label = encodeURIComponent(`${crag.title} 주차장`);
-              const webUrl = `https://map.kakao.com/link/map/${label},${crag.parkingLatitude},${crag.parkingLongitude}`;
-              const iframe = document.createElement('iframe');
-              iframe.style.display = 'none';
-              iframe.src = `kakaomap://look?p=${crag.parkingLatitude},${crag.parkingLongitude}`;
-              document.body.appendChild(iframe);
-              setTimeout(() => { window.open(webUrl, '_blank'); }, 1000);
-              setTimeout(() => { document.body.removeChild(iframe); }, 2000);
-            }}
+            href={`https://map.kakao.com/link/map/${encodeURIComponent(`${crag.title} 주차장`)},${crag.parkingLatitude},${crag.parkingLongitude}`}
+            target="_blank"
+            rel="noopener noreferrer"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M13 3H6v18h4v-6h3c3.31 0 6-2.69 6-6s-2.69-6-6-6zm.2 8H10V7h3.2c1.1 0 2 .9 2 2s-.9 2-2 2z"/>
             </svg>
             Parking Spot
-          </button>
+          </a>
         )}
         {crag.cafeLatitude && crag.cafeLongitude && (
-          <button
+          <a
             className={styles.button}
-            onClick={() => {
-              const label = encodeURIComponent(`${crag.title} 카페`);
-              const webUrl = `https://map.kakao.com/link/map/${label},${crag.cafeLatitude},${crag.cafeLongitude}`;
-              const iframe = document.createElement('iframe');
-              iframe.style.display = 'none';
-              iframe.src = `kakaomap://look?p=${crag.cafeLatitude},${crag.cafeLongitude}`;
-              document.body.appendChild(iframe);
-              setTimeout(() => { window.open(webUrl, '_blank'); }, 1000);
-              setTimeout(() => { document.body.removeChild(iframe); }, 2000);
-            }}
+            href={`https://map.kakao.com/link/map/${encodeURIComponent(`${crag.title} 카페`)},${crag.cafeLatitude},${crag.cafeLongitude}`}
+            target="_blank"
+            rel="noopener noreferrer"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M18.5 3H6c-1.1 0-2 .9-2 2v5.71c0 3.83 2.95 7.18 6.78 7.29 3.96.12 7.22-3.06 7.22-7V8h1.5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 3h-1.5V5h1.5v1zM4 19h16v2H4z"/>
             </svg>
             Cafe
-          </button>
+          </a>
         )}
       </div>
     </div>
@@ -297,35 +283,18 @@ function BoulderTab({ crag, boulders, onBoulderClick }: { crag: Crag; boulders: 
                 <div className={styles.boulderImagePlaceholder} />
               )}
               {boulder.latitude && boulder.longitude && (
-                <button
+                <a
                   className={styles.boulderMapButton}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const webFallbackUrl = `https://map.kakao.com/link/map/${encodeURIComponent(boulder.title)},${boulder.latitude},${boulder.longitude}`;
-
-                    // Try to open Kakao Map app, fallback to web on error
-                    const iframe = document.createElement('iframe');
-                    iframe.style.display = 'none';
-                    iframe.src = `kakaomap://look?p=${boulder.latitude},${boulder.longitude}`;
-                    document.body.appendChild(iframe);
-
-                    // If app doesn't open within 1 second, open web version
-                    const timer = setTimeout(() => {
-                      window.open(webFallbackUrl, '_blank');
-                    }, 1000);
-
-                    // Clean up
-                    setTimeout(() => {
-                      clearTimeout(timer);
-                      document.body.removeChild(iframe);
-                    }, 2000);
-                  }}
+                  href={`https://map.kakao.com/link/map/${encodeURIComponent(boulder.title)},${boulder.latitude},${boulder.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label="카카오맵에서 위치 보기"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>
                   </svg>
-                </button>
+                </a>
               )}
             </div>
             <div className={styles.boulderInfo}>
