@@ -46,6 +46,7 @@ collections:
     create: true
     slug: "{{slug}}"
     fields:
+      - { label: Slug, name: slug, widget: string }
       - { label: 이름, name: title, widget: string }
       - { label: 메인 이미지 (썸네일), name: thumbnail, widget: image }
       - label: 최소 난이도
