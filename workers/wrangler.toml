@@ -2,9 +2,6 @@ name = "granite"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
-[vars]
-ALLOWED_ORIGIN = "https://granite-climbing.github.io"
-
 # D1 database binding
 # NOTE: Replace database_id with actual ID from: wrangler d1 create granite
 [[d1_databases]]

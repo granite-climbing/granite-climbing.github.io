@@ -23,13 +23,12 @@ import { handleGetBetaVideos, handleSubmitBetaVideo } from './handlers/betaVideo
 interface Env {
   INSTAGRAM_ACCESS_TOKEN: string;
   INSTAGRAM_USER_ID: string;
-  ALLOWED_ORIGIN: string;
   DB: D1Database;
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const corsHeaders = createCorsHeaders(env.ALLOWED_ORIGIN);
+    const corsHeaders = createCorsHeaders(request.headers.get('Origin'));
 
     // Handle preflight requests
     if (request.method === 'OPTIONS') {
