@@ -243,10 +243,20 @@ function formatDate(date: string | Date): string {
 
 // 단일 Crag 상세 정보 가져오기
 export function getCragBySlug(slug: string) {
-  const cragFile = path.join(contentDirectory, 'crags', `${slug}.md`);
+  // 1차: 슬러그와 파일명이 일치하는 경우
+  let cragFile = path.join(contentDirectory, 'crags', `${slug}.md`);
 
+  // 2차: 파일명이 다르고 frontmatter slug로 매핑된 경우
   if (!fs.existsSync(cragFile)) {
-    return null;
+    const cragsDir = path.join(contentDirectory, 'crags');
+    const entries = fs.readdirSync(cragsDir).filter((f) => f.endsWith('.md'));
+    const matched = entries.find((entry) => {
+      const raw = fs.readFileSync(path.join(cragsDir, entry), 'utf8');
+      const { data } = matter(raw);
+      return data.slug === slug;
+    });
+    if (!matched) return null;
+    cragFile = path.join(cragsDir, matched);
   }
 
   const fileContents = fs.readFileSync(cragFile, 'utf8');
