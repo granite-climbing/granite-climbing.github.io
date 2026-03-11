@@ -110,6 +110,7 @@ collections:
         search_fields: [title]
         value_field: slug
         display_fields: [title]
+        options_length: 1000
       - { label: 이름, name: title, widget: string }
       - { label: 썸네일 이미지, name: thumbnail, widget: image, required: false }
       - { label: 설명, name: description, widget: text, required: false }
@@ -131,6 +132,7 @@ collections:
         search_fields: [title, crag]
         value_field: slug
         display_fields: [title, crag]
+        options_length: 1000
       - { label: 이름, name: title, widget: string }
       - { label: 토포 이미지, name: image, widget: image, required: true, hint: "토포 이미지는 필수입니다" }
       - { label: 설명, name: description, widget: text, required: false }
@@ -150,6 +152,7 @@ collections:
         search_fields: [title, boulder]
         value_field: slug
         display_fields: [title, boulder]
+        options_length: 1000
         hint: "문제가 속한 토포를 선택하세요"
       - { label: 이름, name: title, widget: string }
       - label: 난이도
