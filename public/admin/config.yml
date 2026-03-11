@@ -94,6 +94,14 @@ collections:
           - { label: "V15", value: "V15" }
           - { label: "V16", value: "V16" }
       - { label: 설명, name: description, widget: text, required: false }
+      - { label: 주소, name: address, widget: string, required: false }
+      - { label: 찾아오는 방법, name: howToGetThere, widget: text, required: false }
+      - { label: 위도 (Latitude), name: latitude, widget: number, value_type: float, required: false, hint: "카카오맵 지도 연동용 위도 (예: 37.646467)" }
+      - { label: 경도 (Longitude), name: longitude, widget: number, value_type: float, required: false, hint: "카카오맵 지도 연동용 경도 (예: 126.971323)" }
+      - { label: 주차장 위도, name: parkingLatitude, widget: number, value_type: float, required: false }
+      - { label: 주차장 경도, name: parkingLongitude, widget: number, value_type: float, required: false }
+      - { label: 카페 위도, name: cafeLatitude, widget: number, value_type: float, required: false }
+      - { label: 카페 경도, name: cafeLongitude, widget: number, value_type: float, required: false }
 
   # 1-1. Boulder (볼더) - Crag 하위
   - name: boulders
