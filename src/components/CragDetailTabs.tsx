@@ -221,7 +221,7 @@ function InfoTab({ crag }: { crag: Crag }) {
           </div>
           <div className={styles.infoContent}>
             <div className={styles.infoLabel}>How to get there?</div>
-            <div className={styles.infoValue}>{crag.howToGetThere || '정보 없음'}</div>
+            <div className={styles.infoValueMultiline}>{crag.howToGetThere || '정보 없음'}</div>
           </div>
         </div>
       </div>

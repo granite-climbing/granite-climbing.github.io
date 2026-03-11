@@ -150,6 +150,13 @@
   line-height: 1.5;
 }
 
+.infoValueMultiline {
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
 .buttons {
   display: flex;
   gap: 12px;
