@@ -1,5 +1,5 @@
 ---
-slug: Suraksan Mountain
+slug: suraksan
 title: 수락산
 thumbnail: /images/물개바위_1.jpg
 difficultyMin: V2
