@@ -1,5 +1,5 @@
 ---
-slug: Bukhansan
+slug: Bukhan Mountain
 thumbnail: /images/madrock_2.jpg
 difficultyMax: V12
 latitude: 37.646467
