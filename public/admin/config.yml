@@ -44,7 +44,7 @@ collections:
     label: Crag (암장)
     folder: content/crags
     create: true
-    slug: "{{slug}}"
+    slug: "{{fields.slug}}"
     fields:
       - { label: Slug, name: slug, widget: string }
       - { label: 이름, name: title, widget: string }
@@ -100,7 +100,7 @@ collections:
     label: Boulder (볼더)
     folder: content/boulders
     create: true
-    slug: "{{slug}}"
+    slug: "{{fields.slug}}"
     fields:
       - { label: Slug, name: slug, widget: string }
       - label: 소속 암장 (Crag)
@@ -121,7 +121,7 @@ collections:
     label: Topo (토포)
     folder: content/topos
     create: true
-    slug: "{{slug}}"
+    slug: "{{fields.slug}}"
     fields:
       - { label: Slug, name: slug, widget: string }
       - label: 소속 볼더 (Boulder)
@@ -140,7 +140,7 @@ collections:
     label: Problem (문제)
     folder: content/problems
     create: true
-    slug: "{{slug}}"
+    slug: "{{fields.slug}}"
     fields:
       - { label: Slug, name: slug, widget: string }
       - label: 소속 토포 (Topo)
