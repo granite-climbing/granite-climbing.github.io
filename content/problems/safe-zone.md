@@ -6,4 +6,5 @@ grade: V2
 hashtag: "#수락산_안전지대"
 fa: "@jjhgood89"
 image: /images/수락산_물개_1_안전지대.png
+index: 2
 ---
