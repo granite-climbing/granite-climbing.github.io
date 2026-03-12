@@ -1,6 +1,6 @@
 ---
 slug: parus
-topo: Woodpecker-Boulder
+topo: woodpecker-boulder-1
 title: 박새
 grade: V8
 hashtag: "#수락산_박새"
