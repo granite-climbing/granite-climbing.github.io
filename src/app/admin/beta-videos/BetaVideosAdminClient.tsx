@@ -145,7 +145,11 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
   const filtered = allVideos.filter(v => {
     if (currentPlatform && v.platform !== currentPlatform) return false;
     if (!showDeleted && v.deletedAt) return false;
-    if (searchVal && !v.problemSlug.toLowerCase().includes(searchVal.toLowerCase())) return false;
+    if (searchVal) {
+      const q = searchVal.toLowerCase();
+      const title = problemMap[v.problemSlug]?.title.toLowerCase() ?? '';
+      if (!v.problemSlug.toLowerCase().includes(q) && !title.includes(q)) return false;
+    }
     return true;
   });
 
