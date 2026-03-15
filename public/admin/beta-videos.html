@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>베타영상 관리 - Granite Admin</title>
+  <script src="/admin/env.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -60,18 +61,6 @@
     }
     .setup-card h2 { font-size: 20px; margin-bottom: 8px; }
     .setup-card p { color: #666; font-size: 14px; margin-bottom: 24px; line-height: 1.5; }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
-    .form-group input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .form-group input:focus { border-color: #4a6cf7; }
     .btn-primary {
       width: 100%;
       padding: 11px;
@@ -286,25 +275,17 @@
   <button class="logout-btn" id="logoutBtn" style="display:none">로그아웃</button>
 </div>
 
-<!-- Setup screen (shown when not logged in) -->
+<!-- Setup screen (shown when Decap CMS session is missing) -->
 <div class="setup-screen" id="setupScreen">
   <div class="setup-card">
-    <h2>관리자 설정</h2>
-    <p>베타영상 관리 API에 접근하려면 Worker URL을 입력하세요.<br>Decap CMS 로그인 세션이 자동으로 사용됩니다.</p>
+    <h2>로그인 필요</h2>
+    <p>베타영상 관리 페이지에 접근하려면 먼저 Decap CMS에 로그인해야 합니다.</p>
 
-    <div class="info-box" id="sessionInfo" style="display:none">
-      ✅ Decap CMS 로그인 세션 감지됨 — 자동으로 인증됩니다.
-    </div>
-    <div class="info-box" style="background:#fff7ed; border-color:#fed7aa; color:#9a3412;" id="sessionWarn" style="display:none">
+    <div class="info-box" style="background:#fff7ed; border-color:#fed7aa; color:#9a3412;" id="sessionWarn">
       ⚠️ Decap CMS 세션이 없습니다. 먼저 <a href="/admin/" style="color:#9a3412">/admin/</a>에서 로그인해 주세요.
     </div>
 
-    <div class="form-group">
-      <label>Worker API URL</label>
-      <input type="url" id="workerUrlInput" placeholder="https://granite.xxx.workers.dev" />
-    </div>
-
-    <button class="btn-primary" id="connectBtn">연결</button>
+    <button class="btn-primary" id="connectBtn">로그인 후 연결</button>
     <div class="error-msg" id="setupError"></div>
   </div>
 </div>
@@ -352,7 +333,7 @@
 
 <script>
   // ─── State ──────────────────────────────────────────────────────────────────
-  let workerUrl = '';
+  const workerUrl = (window.__ENV__ && window.__ENV__.INSTAGRAM_API_URL || '').replace(/\/$/, '');
   let authToken = '';
   let allVideos = [];
   let currentPlatform = '';
@@ -400,64 +381,8 @@
   }
 
   // ─── Setup screen ────────────────────────────────────────────────────────────
-  function initSetupScreen() {
-    const token = getDecapToken();
-    if (token) {
-      document.getElementById('sessionInfo').style.display = 'block';
-      document.getElementById('sessionWarn').style.display = 'none';
-    } else {
-      document.getElementById('sessionInfo').style.display = 'none';
-      document.getElementById('sessionWarn').style.display = 'block';
-    }
-
-    const saved = localStorage.getItem('granite_worker_url');
-    if (saved) document.getElementById('workerUrlInput').value = saved;
-  }
-
-  document.getElementById('connectBtn').addEventListener('click', async () => {
-    const url = document.getElementById('workerUrlInput').value.trim().replace(/\/$/, '');
-    const errEl = document.getElementById('setupError');
-    errEl.textContent = '';
-
-    if (!url) { errEl.textContent = 'Worker URL을 입력해 주세요.'; return; }
-
-    const token = getDecapToken();
-    if (!token) {
-      errEl.textContent = '⚠️ Decap CMS 세션이 없습니다. /admin/ 에서 먼저 로그인하세요.';
-      return;
-    }
-
-    const btn = document.getElementById('connectBtn');
-    btn.disabled = true;
-    btn.textContent = '연결 중...';
-
-    try {
-      const res = await fetch(`${url}/admin/beta-videos`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.status === 401) {
-        errEl.textContent = '인증 실패: Decap CMS 세션이 만료되었거나 유효하지 않습니다. /admin/ 에서 재로그인하세요.';
-        return;
-      }
-      if (!res.ok) {
-        errEl.textContent = `연결 실패: ${res.status} ${res.statusText}`;
-        return;
-      }
-
-      localStorage.setItem('granite_worker_url', url);
-      workerUrl = url;
-      authToken = token;
-
-      const data = await res.json();
-      allVideos = data.videos || [];
-      showMainScreen();
-    } catch (e) {
-      errEl.textContent = `연결 오류: ${e.message}`;
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '연결';
-    }
+  document.getElementById('connectBtn').addEventListener('click', () => {
+    window.location.href = '/admin/';
   });
 
   // ─── Main screen ─────────────────────────────────────────────────────────────
@@ -465,26 +390,30 @@
     document.getElementById('setupScreen').style.display = 'none';
     document.getElementById('mainScreen').style.display = 'block';
     document.getElementById('logoutBtn').style.display = 'block';
-    renderTable();
+    loadVideos();
   }
 
   async function loadVideos() {
     const params = new URLSearchParams();
     if (showDeleted) params.set('includeDeleted', '1');
 
-    const res = await fetch(`${workerUrl}/admin/beta-videos?${params}`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
+    try {
+      const res = await fetch(`${workerUrl}/admin/beta-videos?${params}`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
 
-    if (res.status === 401) {
-      alert('세션이 만료되었습니다. 다시 로그인해 주세요.');
-      resetToSetup();
-      return;
+      if (res.status === 401) {
+        alert('세션이 만료되었습니다. 다시 로그인해 주세요.');
+        resetToSetup();
+        return;
+      }
+
+      const data = await res.json();
+      allVideos = data.videos || [];
+      renderTable();
+    } catch (e) {
+      document.getElementById('loadingState').textContent = `오류: ${e.message}`;
     }
-
-    const data = await res.json();
-    allVideos = data.videos || [];
-    renderTable();
   }
 
   function renderTable() {
@@ -563,7 +492,6 @@
         return;
       }
 
-      // Update local state (soft delete)
       const v = allVideos.find(v => v.id === id);
       if (v) v.deletedAt = new Date().toISOString();
       renderTable();
@@ -592,30 +520,20 @@
   document.getElementById('logoutBtn').addEventListener('click', resetToSetup);
 
   function resetToSetup() {
-    localStorage.removeItem('granite_worker_url');
-    workerUrl = '';
     authToken = '';
     allVideos = [];
     document.getElementById('mainScreen').style.display = 'none';
     document.getElementById('setupScreen').style.display = 'flex';
     document.getElementById('logoutBtn').style.display = 'none';
-    document.getElementById('setupError').textContent = '';
-    initSetupScreen();
   }
 
   // ─── Init ────────────────────────────────────────────────────────────────────
-  initSetupScreen();
-
-  // Auto-connect if Worker URL is saved and token is available
-  const savedUrl = localStorage.getItem('granite_worker_url');
-  const savedToken = getDecapToken();
-  if (savedUrl && savedToken) {
-    workerUrl = savedUrl;
-    authToken = savedToken;
-    document.getElementById('setupScreen').style.display = 'none';
-    document.getElementById('mainScreen').style.display = 'block';
-    document.getElementById('logoutBtn').style.display = 'block';
-    loadVideos();
+  const token = getDecapToken();
+  if (token && workerUrl) {
+    authToken = token;
+    showMainScreen();
+  } else {
+    document.getElementById('setupScreen').style.display = 'flex';
   }
 </script>
 </body>

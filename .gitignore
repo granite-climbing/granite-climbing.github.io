@@ -35,3 +35,6 @@ next-env.d.ts
 
 # Wrangler
 workers/.wrangler/
+
+# Auto-generated at build time from NEXT_PUBLIC_* env vars
+public/admin/env.js
