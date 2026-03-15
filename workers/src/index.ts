@@ -4,6 +4,7 @@
  * Provides:
  * 1. Instagram hashtag media search proxy (keeps access token secure)
  * 2. Beta video submission and retrieval (D1 database)
+ * 3. Admin beta video management (list, soft delete)
  *
  * Environment variables (set via `wrangler secret put`):
  *   INSTAGRAM_ACCESS_TOKEN  - Long-lived user access token
@@ -19,6 +20,7 @@
 import { createCorsHeaders, jsonResponse } from './utils/response';
 import { handleHashtagSearch } from './handlers/hashtag';
 import { handleGetBetaVideos, handleSubmitBetaVideo } from './handlers/betaVideos';
+import { handleAdminGetBetaVideos, handleAdminDeleteBetaVideo } from './handlers/adminBetaVideos';
 
 interface Env {
   INSTAGRAM_ACCESS_TOKEN: string;
@@ -43,6 +45,25 @@ export default {
         return handleGetBetaVideos(request, env, corsHeaders);
       } else if (request.method === 'POST') {
         return handleSubmitBetaVideo(request, env, corsHeaders);
+      } else {
+        return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+      }
+    }
+
+    // Route: Admin beta video list
+    if (url.pathname === '/admin/beta-videos') {
+      if (request.method === 'GET') {
+        return handleAdminGetBetaVideos(request, env, corsHeaders);
+      } else {
+        return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+      }
+    }
+
+    // Route: Admin beta video delete (soft delete)
+    const adminDeleteMatch = url.pathname.match(/^\/admin\/beta-videos\/(\d+)$/);
+    if (adminDeleteMatch) {
+      if (request.method === 'DELETE') {
+        return handleAdminDeleteBetaVideo(request, env, corsHeaders, adminDeleteMatch[1]);
       } else {
         return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
       }
