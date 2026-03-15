@@ -1,0 +1,115 @@
+.main {
+  padding-top: 57px;
+  min-height: 100dvh;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #eee;
+  padding: 0 16px;
+}
+
+.tab {
+  padding: 14px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #999;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tabActive {
+  color: #333;
+  border-bottom-color: #333;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px;
+}
+
+.empty {
+  text-align: center;
+  padding: 60px 0;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.card {
+  display: flex;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid #f0f0f0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.card:last-child {
+  border-bottom: none;
+}
+
+.cardContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cardType {
+  font-size: 0.75rem;
+  color: #999;
+  font-weight: 500;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardExcerpt {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardDate {
+  font-size: 0.8rem;
+  color: #999;
+  margin-top: auto;
+}
+
+.cardThumbnail {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.cardThumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cardThumbnailPlaceholder {
+  width: 100%;
+  height: 100%;
+  background: #e0e0e0;
+}
