@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import './globals.css'
 import { getSiteSettings } from '@/lib/content'
 
@@ -34,6 +35,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>{children}</body>
+      <Script src="//t1.daumcdn.net/kas/static/ba.min.js" strategy="afterInteractive" />
     </html>
   )
 }

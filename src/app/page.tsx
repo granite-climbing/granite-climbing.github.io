@@ -21,6 +21,13 @@ export default async function Home() {
         <CragSection crags={crags} />
         <CultureSection items={cultureItems} />
       </main>
+      <ins
+        className="kakao_ad_area"
+        style={{ display: 'none' }}
+        data-ad-unit="DAN-NdbPSsrEqJVleWrJ"
+        data-ad-width="320"
+        data-ad-height="50"
+      />
       <Footer />
     </>
   );
