@@ -6,7 +6,7 @@ import { getAssetPath } from './utils';
 const contentDirectory = path.join(process.cwd(), 'content');
 
 // 모든 Boulder 가져오기 (flat 구조)
-function getAllBoulders() {
+export function getAllBoulders() {
   const bouldersDir = path.join(contentDirectory, 'boulders');
 
   if (!fs.existsSync(bouldersDir)) {
@@ -33,7 +33,7 @@ function getAllBoulders() {
 }
 
 // 모든 Topo 가져오기 (flat 구조)
-function getAllTopos() {
+export function getAllTopos() {
   const toposDir = path.join(contentDirectory, 'topos');
 
   if (!fs.existsSync(toposDir)) {
@@ -58,7 +58,7 @@ function getAllTopos() {
 }
 
 // 모든 Problem 가져오기 (flat 구조)
-function getAllProblems() {
+export function getAllProblems() {
   const problemsDir = path.join(contentDirectory, 'problems');
 
   if (!fs.existsSync(problemsDir)) {
