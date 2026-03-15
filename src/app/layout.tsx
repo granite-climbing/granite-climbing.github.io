@@ -36,6 +36,13 @@ export default function RootLayout({
     <html lang="ko">
       <body>{children}</body>
       <Script src="//t1.daumcdn.net/kas/static/ba.min.js" strategy="afterInteractive" />
+      <Script src="https://www.googletagmanager.com/gtag/js?id=G-ZQ4SLYGXX6" strategy="afterInteractive" />
+      <Script id="google-analytics" strategy="afterInteractive">{`
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ZQ4SLYGXX6');
+      `}</Script>
     </html>
   )
 }
