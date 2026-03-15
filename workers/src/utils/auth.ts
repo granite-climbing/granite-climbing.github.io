@@ -23,10 +23,18 @@ export function extractBearerToken(request: Request): string | null {
 export async function verifyDecapBridgeToken(token: string): Promise<boolean> {
   try {
     const response = await fetch('https://gateway.decapbridge.com/github/branches/main', {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'User-Agent': 'granite-worker/1.0',
+      },
     });
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('[auth] DecapBridge verification failed:', response.status, response.statusText, 'body:', text, 'token:', token);
+    }
     return response.ok;
-  } catch {
+  } catch (e) {
+    console.error('[auth] DecapBridge fetch error:', e);
     return false;
   }
 }
