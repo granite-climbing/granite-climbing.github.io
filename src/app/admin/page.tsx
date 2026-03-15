@@ -1,7 +1,6 @@
 'use client';
 
 import Script from 'next/script';
-import Link from 'next/link';
 
 export default function AdminPage() {
   return (
@@ -10,7 +9,7 @@ export default function AdminPage() {
         src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"
         strategy="afterInteractive"
       />
-      <Link
+      <a
         href="/admin/beta-videos/"
         style={{
           position: 'fixed',
@@ -31,7 +30,7 @@ export default function AdminPage() {
         onMouseLeave={e => (e.currentTarget.style.background = '#1a1a2e')}
       >
         📹 베타영상 관리
-      </Link>
+      </a>
     </>
   );
 }
