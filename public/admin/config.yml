@@ -38,6 +38,9 @@ collections:
           - { label: 히어로 이미지, name: heroImage, widget: image }
           - { label: 슬로건 1, name: slogan1, widget: string, default: "DREAM to DREAM!" }
           - { label: 슬로건 2, name: slogan2, widget: string, default: "WORK LESS, CLIMB MORE!" }
+          - { label: 사이트 제목, name: title, widget: string, default: "Granite" }
+          - { label: 사이트 설명 (SEO), name: description, widget: text, required: false }
+          - { label: 사이트 URL, name: siteUrl, widget: string, required: false, hint: "https://granite.kr 형식으로 입력" }
 
   # 1. Crag (암장 정보)
   - name: crags
