@@ -421,26 +421,37 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                   ) : (
                     <>
                       {/* Display hashtag media */}
-                      {instagramMedia.slice(0, 9).map((media) => (
-                        <a
-                          key={`hashtag-${media.id}`}
-                          href={media.permalink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.gridItem}
-                        >
-                          <img
-                            src={media.media_type === 'VIDEO' ? media.thumbnail_url : media.media_url}
-                            alt="Beta video"
-                            className={styles.gridImage}
-                          />
-                          {media.media_type === 'VIDEO' && (
-                            <div className={styles.gridVideoIcon}>
-                              <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
-                            </div>
-                          )}
-                        </a>
-                      ))}
+                      {instagramMedia.slice(0, 9).map((media) => {
+                        const imgSrc = media.media_type === 'VIDEO' ? media.thumbnail_url : media.media_url;
+                        return (
+                          <a
+                            key={`hashtag-${media.id}`}
+                            href={media.permalink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.gridItem}
+                          >
+                            {imgSrc ? (
+                              <img
+                                src={imgSrc}
+                                alt="Beta video"
+                                className={styles.gridImage}
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                  e.currentTarget.parentElement?.classList.add(styles.gridPlaceholder);
+                                }}
+                              />
+                            ) : (
+                              <div className={styles.gridPlaceholder} />
+                            )}
+                            {media.media_type === 'VIDEO' && (
+                              <div className={styles.gridVideoIcon}>
+                                <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
+                              </div>
+                            )}
+                          </a>
+                        );
+                      })}
 
                       {/* Display submitted videos */}
                       {submittedVideos.map((video) => {
@@ -461,13 +472,13 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                                 src={embedThumbnail}
                                 alt="Beta video"
                                 className={styles.gridImage}
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                  e.currentTarget.parentElement?.classList.add(styles.gridPlaceholder);
+                                }}
                               />
                             ) : (
-                              <div className={styles.gridPlaceholder}>
-                                <div className={styles.gridVideoIcon}>
-                                  <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
-                                </div>
-                              </div>
+                              <div className={styles.gridPlaceholder} />
                             )}
                             <div className={styles.gridVideoIcon}>
                               <span style={{ color: '#fff', fontSize: '12px' }}>▶</span>
