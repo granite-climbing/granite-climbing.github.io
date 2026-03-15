@@ -121,6 +121,9 @@ export function getSiteSettings() {
   return {
     heroImage: getAssetPath(data.heroImage || '/images/hero-sample.jpg'),
     slogan: data.slogan || 'DREAM to DREAM!',
+    title: data.title || 'Granite',
+    description: data.description || '',
+    siteUrl: data.siteUrl || '',
   };
 }
 
