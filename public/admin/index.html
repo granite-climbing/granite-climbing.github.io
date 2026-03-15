@@ -8,17 +8,5 @@
   </head>
   <body>
     <script src="https://unpkg.com/decap-cms@latest/dist/decap-cms.js"></script>
-    <script>
-      // 베타영상 관리 링크 추가
-      window.addEventListener('load', function () {
-        var link = document.createElement('a');
-        link.href = '/admin/beta-videos/';
-        link.textContent = '📹 베타영상 관리';
-        link.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;background:#1a1a2e;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none;font-family:sans-serif;font-size:14px;font-weight:500;box-shadow:0 2px 8px rgba(0,0,0,0.3);';
-        link.addEventListener('mouseenter', function () { this.style.background = '#2d2d4e'; });
-        link.addEventListener('mouseleave', function () { this.style.background = '#1a1a2e'; });
-        document.body.appendChild(link);
-      });
-    </script>
   </body>
 </html>
