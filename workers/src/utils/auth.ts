@@ -7,10 +7,6 @@
  * so we validate by calling the DecapBridge /users API with the token.
  */
 
-// Site-specific DecapBridge identity URL (same as config.yml identity_url)
-const DECAPBRIDGE_IDENTITY_URL =
-  'https://auth.decapbridge.com/sites/ece8f802-f88d-46e0-94b9-d927b657f7ad';
-
 /**
  * Extract Bearer token from Authorization header
  */
@@ -26,7 +22,7 @@ export function extractBearerToken(request: Request): string | null {
  */
 export async function verifyDecapBridgeToken(token: string): Promise<boolean> {
   try {
-    const response = await fetch(`${DECAPBRIDGE_IDENTITY_URL}/users`, {
+    const response = await fetch('https://gateway.decapbridge.com/github/branches/main', {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.ok;
