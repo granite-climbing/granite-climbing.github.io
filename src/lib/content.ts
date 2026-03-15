@@ -121,12 +121,9 @@ export function getSiteSettings() {
   const fileContents = fs.readFileSync(filePath, 'utf8');
   const { data } = matter(fileContents);
 
-  const slogan1 = data.slogan1 || 'DREAM to DREAM!';
-  const slogan2 = data.slogan2 || '';
-
   return {
     heroImage: getAssetPath(data.heroImage || '/images/hero-sample.jpg'),
-    slogan: slogan2 ? `${slogan1}\n${slogan2}` : slogan1,
+    slogan: data.slogan || 'DREAM to DREAM!',
     title: data.title || 'Granite',
     description: data.description || '',
     siteUrl: data.siteUrl || '',
