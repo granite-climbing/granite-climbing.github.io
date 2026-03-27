@@ -63,6 +63,7 @@ export async function handleSubmitBetaVideo(
       problemSlug?: string;
       videoUrl?: string;
       instagramUrl?: string; // legacy field name
+      thumbnailUrl?: string | null;
     };
     const { problemSlug } = body;
     const videoUrl = body.videoUrl || body.instagramUrl;
@@ -93,26 +94,8 @@ export async function handleSubmitBetaVideo(
       }
     }
 
-    // Fetch thumbnail (best effort, Instagram only for now)
-    let thumbnailUrl = null;
-    if (platform === 'instagram') {
-      try {
-        const response = await fetch(videoUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-          },
-        });
-
-        if (response.ok) {
-          const html = await response.text();
-          const ogImageMatch = html.match(/<meta property="og:image" content="([^"]+)"/);
-          const twitterImageMatch = html.match(/<meta name="twitter:image" content="([^"]+)"/);
-          thumbnailUrl = ogImageMatch?.[1] || twitterImageMatch?.[1] || null;
-        }
-      } catch (error) {
-        console.error('Failed to fetch thumbnail:', error);
-      }
-    }
+    // Use provided thumbnail if available, otherwise skip (Instagram OG scraping doesn't work without login)
+    const thumbnailUrl = body.thumbnailUrl || null;
 
     const result = await env.DB.prepare(
       'INSERT INTO beta_videos (problem_slug, video_url, post_id, platform, thumbnail_url, submitted_at, status) VALUES (?, ?, ?, ?, ?, ?, ?)'

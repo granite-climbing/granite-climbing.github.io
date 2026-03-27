@@ -329,7 +329,11 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
         const res = await fetch(`${WORKER_URL}/beta-videos`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ problemSlug: hashtagProblem, videoUrl: post.permalink }),
+          body: JSON.stringify({
+            problemSlug: hashtagProblem,
+            videoUrl: post.permalink,
+            thumbnailUrl: post.media_url || post.thumbnail_url || null,
+          }),
         });
         if (res.ok) {
           successCount++;
