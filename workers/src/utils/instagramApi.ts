@@ -25,13 +25,60 @@ export interface HashtagMediaResult {
 }
 
 /**
+ * Enrich media items with Instagram username via oEmbed API.
+ * oEmbed accepts a post permalink and returns author_name (= username).
+ * Uses App access token ({APP_ID}|{APP_SECRET}) — no user token needed.
+ */
+async function enrichWithOembed(
+  items: Omit<InstagramMediaItem, 'username'>[],
+  appToken: string
+): Promise<InstagramMediaItem[]> {
+  console.log(`[oembed] enriching ${items.length} items`);
+  const results = await Promise.allSettled(
+    items.map((item) =>
+      fetch(
+        `${INSTAGRAM_API}/instagram_oembed` +
+          `?url=${encodeURIComponent(item.permalink)}` +
+          `&fields=author_name` +
+          `&access_token=${appToken}`
+      ).then(async (r) => {
+        const text = await r.text();
+        if (!r.ok) {
+          console.warn(`[oembed] failed for ${item.permalink}: ${r.status} ${text}`);
+          return null;
+        }
+        const json = JSON.parse(text) as { author_name?: string };
+        console.log(`[oembed] ${item.permalink}: author_name=${json.author_name ?? 'null'}`);
+        return json;
+      })
+    )
+  );
+
+  let successCount = 0;
+  const enriched: InstagramMediaItem[] = items.map((item, i) => {
+    const result = results[i];
+    if (result.status === 'fulfilled' && result.value?.author_name) {
+      successCount++;
+      return { ...item, username: result.value.author_name };
+    }
+    if (result.status === 'rejected') {
+      console.error(`[oembed] rejected for ${item.permalink}:`, result.reason);
+    }
+    return item;
+  });
+  console.log(`[oembed] username resolved: ${successCount}/${items.length}`);
+  return enriched;
+}
+
+/**
  * Search recent media for a hashtag using the Instagram Graph API
  */
 export async function searchHashtagMedia(
   tag: string,
   accessToken: string,
   userId: string,
-  after?: string
+  after?: string,
+  appToken?: string
 ): Promise<HashtagMediaResult> {
   const hashtagId = await getHashtagId(tag, accessToken, userId);
   if (!hashtagId) return { items: [], nextCursor: null };
@@ -75,9 +122,13 @@ export async function searchHashtagMedia(
       media_type: item.media_type || 'IMAGE',
     }));
 
-  // NOTE: Instagram Graph API (error_subcode 33) does not allow individual media lookups
-  // for IDs obtained via hashtag search — username and timestamp cannot be retrieved.
-  const items: InstagramMediaItem[] = baseItems;
+  // Fetch username via oEmbed API using each item's permalink.
+  // oEmbed accepts the post URL and returns author_name (= Instagram username).
+  // Uses an App access token ({APP_ID}|{APP_SECRET}) — no user token needed.
+  // timestamp is not available via oEmbed; remains undefined.
+  const items: InstagramMediaItem[] = appToken
+    ? await enrichWithOembed(baseItems, appToken)
+    : baseItems;
 
   const nextCursor = data.paging?.next ? (data.paging.cursors?.after ?? null) : null;
 

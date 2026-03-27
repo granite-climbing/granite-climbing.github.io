@@ -375,7 +375,10 @@ export async function handleAdminHashtagSearch(
   try {
     // Strip leading # if present
     const cleanTag = hashtag.replace(/^#/, '');
-    const result = await searchHashtagMedia(cleanTag, row.access_token, row.user_id, after);
+    const appToken = env.INSTAGRAM_APP_ID && env.INSTAGRAM_APP_SECRET
+      ? `${env.INSTAGRAM_APP_ID}|${env.INSTAGRAM_APP_SECRET}`
+      : undefined;
+    const result = await searchHashtagMedia(cleanTag, row.access_token, row.user_id, after, appToken);
     return jsonResponse({ data: result.items, nextCursor: result.nextCursor }, 200, corsHeaders);
   } catch (err) {
     console.error('Admin hashtag search error:', err);
