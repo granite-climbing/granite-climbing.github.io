@@ -427,10 +427,11 @@
   inset: 0;
   background: rgba(0,0,0,0.5);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 1000;
   padding: 16px;
+  overflow-y: auto;
 }
 
 .modalContent {
@@ -438,11 +439,11 @@
   border-radius: 12px;
   width: 100%;
   max-width: 860px;
-  max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  margin: auto;
 }
 
 .modalHeader {
@@ -501,9 +502,6 @@
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
   padding: 16px 24px;
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
 }
 
 .igCard {
