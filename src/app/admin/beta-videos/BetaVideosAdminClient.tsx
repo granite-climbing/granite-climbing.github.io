@@ -71,6 +71,45 @@ function truncateUrl(url: string, max = 50): string {
   }
 }
 
+// --- Dry-run helpers (mirrors worker-side logic in validation.ts) ---
+
+interface DryRunRow {
+  problem_slug: string;
+  video_url: string;
+  post_id: string | null;
+  platform: string;
+  thumbnail_url: string | null;
+  submitted_at: string;
+  status: string;
+  instagram_username: string | null;
+  instagram_timestamp: string | null;
+}
+
+function clientDetectPlatform(url: string): string {
+  if (/instagram\.com/.test(url)) return 'instagram';
+  if (/youtube\.com|youtu\.be/.test(url)) return 'youtube';
+  if (/tiktok\.com/.test(url)) return 'tiktok';
+  return 'other';
+}
+
+function clientExtractPostId(url: string, platform: string): string | null {
+  if (platform === 'instagram') {
+    const m = url.match(/instagram\.com\/(p|reel)\/([A-Za-z0-9_-]+)/);
+    return m ? m[2] : null;
+  }
+  if (platform === 'youtube') {
+    const m = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]+)/);
+    return m ? m[1] : null;
+  }
+  if (platform === 'tiktok') {
+    const m = url.match(/video\/(\d+)/);
+    return m ? m[1] : null;
+  }
+  return null;
+}
+
+// -------------------------------------------------------------------
+
 const PLATFORM_INFO: Record<Platform, { icon: string; label: string }> = {
   instagram: { icon: '📸', label: 'Instagram' },
   youtube:   { icon: '▶',  label: 'YouTube' },
@@ -108,6 +147,7 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
   const [registering, setRegistering] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [dryRunRows, setDryRunRows] = useState<DryRunRow[] | null>(null);
 
   useEffect(() => {
     const token = getDecapToken();
@@ -361,6 +401,29 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
     } else {
       setSelectedPostIds(new Set(hashtagResults.map(p => p.id)));
     }
+  }
+
+  function dryRunSelected() {
+    if (!hashtagProblem || selectedPostIds.size === 0) return;
+    const selected = hashtagResults.filter(p => selectedPostIds.has(p.id));
+    const now = new Date().toISOString();
+    const rows: DryRunRow[] = selected.map(post => {
+      const videoUrl = post.permalink;
+      const platform = clientDetectPlatform(videoUrl);
+      const postId = clientExtractPostId(videoUrl, platform);
+      return {
+        problem_slug: hashtagProblem,
+        video_url: videoUrl,
+        post_id: postId,
+        platform,
+        thumbnail_url: post.media_url || post.thumbnail_url || null,
+        submitted_at: now,
+        status: 'approved',
+        instagram_username: post.username || null,
+        instagram_timestamp: post.timestamp || null,
+      };
+    });
+    setDryRunRows(rows);
   }
 
   async function registerSelectedAsBetaVideos() {
@@ -642,6 +705,14 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
                   취소
                 </button>
                 <button
+                  className={styles.modalDryRunBtn}
+                  onClick={dryRunSelected}
+                  disabled={selectedPostIds.size === 0 || !hashtagProblem}
+                  title={!hashtagProblem ? '모달을 닫고 문제를 선택하세요' : 'DB에 저장될 데이터 미리보기'}
+                >
+                  🔍 Dry Run ({selectedPostIds.size})
+                </button>
+                <button
                   className={styles.modalRegisterBtn}
                   onClick={registerSelectedAsBetaVideos}
                   disabled={selectedPostIds.size === 0 || registering || !hashtagProblem}
@@ -651,6 +722,73 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
                     ? '등록 중...'
                     : `선택된 ${selectedPostIds.size}개 베타로 등록`}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dry Run Result Modal */}
+        {dryRunRows && (
+          <div className={styles.modalOverlay} onClick={() => setDryRunRows(null)}>
+            <div className={styles.modal} style={{ maxWidth: '900px' }} onClick={e => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2>🔍 Dry Run — DB INSERT 미리보기</h2>
+                <button className={styles.modalClose} onClick={() => setDryRunRows(null)}>×</button>
+              </div>
+              <div className={styles.modalBody}>
+                <p style={{ marginBottom: '12px', color: '#666', fontSize: '13px' }}>
+                  실제로 저장되는 데이터가 아닙니다. 아래는 <strong>{dryRunRows.length}개</strong> 포스트 선택 시 DB에 INSERT될 값입니다.
+                </p>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className={styles.table} style={{ fontSize: '12px' }}>
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>problem_slug</th>
+                        <th>video_url</th>
+                        <th>post_id</th>
+                        <th>platform</th>
+                        <th>thumbnail_url</th>
+                        <th>status</th>
+                        <th>instagram_username</th>
+                        <th>instagram_timestamp</th>
+                        <th>submitted_at</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dryRunRows.map((row, i) => (
+                        <tr key={i}>
+                          <td>{i + 1}</td>
+                          <td><code>{row.problem_slug}</code></td>
+                          <td style={{ maxWidth: '160px', wordBreak: 'break-all' }}>
+                            <a href={row.video_url} target="_blank" rel="noopener noreferrer">{row.video_url}</a>
+                          </td>
+                          <td><code>{row.post_id ?? <span style={{ color: '#999' }}>null</span>}</code></td>
+                          <td><code>{row.platform}</code></td>
+                          <td style={{ maxWidth: '120px', wordBreak: 'break-all', fontSize: '11px' }}>
+                            {row.thumbnail_url
+                              ? <a href={row.thumbnail_url} target="_blank" rel="noopener noreferrer">보기 ↗</a>
+                              : <span style={{ color: '#999' }}>null</span>}
+                          </td>
+                          <td><code>{row.status}</code></td>
+                          <td>{row.instagram_username
+                            ? <code>@{row.instagram_username}</code>
+                            : <span style={{ color: '#999' }}>null</span>}
+                          </td>
+                          <td style={{ fontSize: '11px' }}>
+                            {row.instagram_timestamp
+                              ? formatDate(row.instagram_timestamp)
+                              : <span style={{ color: '#999' }}>null</span>}
+                          </td>
+                          <td style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>{formatDate(row.submitted_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className={styles.modalFooter}>
+                <button className={styles.modalCancelBtn} onClick={() => setDryRunRows(null)}>닫기</button>
               </div>
             </div>
           </div>
