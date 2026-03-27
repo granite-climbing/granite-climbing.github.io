@@ -36,7 +36,11 @@ export async function searchHashtagMedia(
     `&access_token=${accessToken}`;
 
   const res = await fetch(mediaUrl);
-  if (!res.ok) return [];
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error('[hashtag] recent_media failed:', res.status, errText);
+    return [];
+  }
 
   const data = (await res.json()) as {
     data: {
@@ -47,6 +51,7 @@ export async function searchHashtagMedia(
       media_type: string;
     }[];
   };
+  console.log('[hashtag] recent_media count:', data.data?.length ?? 0);
 
   return data.data.map((item) => ({
     id: item.id,
@@ -77,9 +82,15 @@ export async function getHashtagId(
     `&access_token=${accessToken}`;
 
   const res = await fetch(searchUrl);
-  if (!res.ok) return null;
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error('[hashtag] ig_hashtag_search failed:', res.status, errText);
+    return null;
+  }
 
   const data = (await res.json()) as { data: { id: string }[] };
+  console.log('[hashtag] ig_hashtag_search response:', JSON.stringify(data));
+
   if (data.data.length === 0) return null;
 
   const id = data.data[0].id;

@@ -137,7 +137,10 @@ export async function handleInstagramCallback(
       return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=token_exchange`, 302);
     }
 
-    const tokenData = (await tokenRes.json()) as {
+    const tokenRaw = await tokenRes.json();
+    console.log('[oauth] step1 token response:', JSON.stringify({ ...tokenRaw as object, access_token: '***' }));
+
+    const tokenData = tokenRaw as {
       access_token: string;
       token_type: string;
       expires_in?: number;
@@ -155,6 +158,7 @@ export async function handleInstagramCallback(
         const accountsData = (await accountsRes.json()) as {
           data: { instagram_business_account?: { id: string } }[];
         };
+        console.log('[oauth] step2 accounts response:', JSON.stringify(accountsData));
         const igId = accountsData.data?.[0]?.instagram_business_account?.id;
         if (igId) {
           userId = igId;
@@ -194,14 +198,25 @@ export async function handleInstagramCallback(
       return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=long_token_exchange`, 302);
     }
 
-    const longTokenData = (await longTokenRes.json()) as {
+    const longTokenRaw = await longTokenRes.json();
+    console.log('[oauth] long token response:', JSON.stringify(longTokenRaw));
+
+    const longTokenData = longTokenRaw as {
       access_token: string;
       token_type: string;
-      expires_in: number;
+      expires_in?: number;
+      expires_at?: number;
     };
 
     const now = new Date().toISOString();
-    const expiresAt = new Date(Date.now() + longTokenData.expires_in * 1000).toISOString();
+    let expiresAt: string;
+    if (longTokenData.expires_in) {
+      expiresAt = new Date(Date.now() + longTokenData.expires_in * 1000).toISOString();
+    } else if (longTokenData.expires_at) {
+      expiresAt = new Date(longTokenData.expires_at * 1000).toISOString();
+    } else {
+      expiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+    }
 
     // Upsert: delete existing token, insert new one
     await env.DB.prepare('DELETE FROM instagram_tokens').run();
