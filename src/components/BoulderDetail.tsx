@@ -422,7 +422,10 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                     <>
                       {/* Display hashtag media */}
                       {instagramMedia.slice(0, 9).map((media) => {
-                        const imgSrc = media.media_type === 'VIDEO' ? media.thumbnail_url : media.media_url;
+                        const rawSrc = media.media_type === 'VIDEO' ? media.thumbnail_url : media.media_url;
+                        const imgSrc = rawSrc
+                          ? `${process.env.NEXT_PUBLIC_INSTAGRAM_API_URL || ''}/proxy/image?url=${encodeURIComponent(rawSrc)}`
+                          : undefined;
                         return (
                           <a
                             key={`hashtag-${media.id}`}
@@ -455,8 +458,10 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
 
                       {/* Display submitted videos */}
                       {submittedVideos.map((video) => {
-                        const postId = video.instagramUrl?.match(/\/(p|reel)\/([A-Za-z0-9_-]+)/)?.[2];
-                        const embedThumbnail = postId ? `https://www.instagram.com/p/${postId}/media/?size=m` : null;
+                        const rawThumb = video.thumbnailUrl;
+                        const thumbnailSrc = rawThumb
+                          ? `${process.env.NEXT_PUBLIC_INSTAGRAM_API_URL || ''}/proxy/image?url=${encodeURIComponent(rawThumb)}`
+                          : null;
 
                         return (
                           <a
@@ -467,9 +472,9 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                             rel="noopener noreferrer"
                             style={{ cursor: 'pointer', display: 'block' }}
                           >
-                            {embedThumbnail ? (
+                            {thumbnailSrc ? (
                               <img
-                                src={embedThumbnail}
+                                src={thumbnailSrc}
                                 alt="Beta video"
                                 className={styles.gridImage}
                                 onError={(e) => {

@@ -132,6 +132,23 @@ export default {
       }
     }
 
+    // Route: Image proxy (strips CORP headers from Instagram CDN images)
+    if (url.pathname === '/proxy/image') {
+      const imageUrl = url.searchParams.get('url');
+      if (!imageUrl) return jsonResponse({ error: 'Missing url parameter' }, 400, corsHeaders);
+      try {
+        const res = await fetch(imageUrl);
+        if (!res.ok) return new Response(null, { status: res.status });
+        const headers = new Headers(corsHeaders);
+        headers.set('Content-Type', res.headers.get('Content-Type') || 'image/jpeg');
+        headers.set('Cache-Control', 'public, max-age=86400');
+        headers.delete('Cross-Origin-Resource-Policy');
+        return new Response(res.body, { status: 200, headers });
+      } catch {
+        return new Response(null, { status: 502 });
+      }
+    }
+
     // Route: Instagram hashtag search (public)
     if (request.method !== 'GET') {
       return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);

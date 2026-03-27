@@ -102,6 +102,7 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
   const [hashtagLoading, setHashtagLoading] = useState(false);
   const [hashtagError, setHashtagError] = useState('');
   const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
+  const [registeredUrls, setRegisteredUrls] = useState<Set<string>>(new Set());
   const [registering, setRegistering] = useState(false);
 
   useEffect(() => {
@@ -281,15 +282,35 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
 
     try {
       const params = new URLSearchParams({ hashtag: hashtagQuery.trim() });
-      const res = await fetch(`${WORKER_URL}/admin/instagram/hashtag?${params}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      const data = await res.json();
-      if (!res.ok) {
+      const [hashtagRes, videosRes] = await Promise.all([
+        fetch(`${WORKER_URL}/admin/instagram/hashtag?${params}`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }),
+        hashtagProblem
+          ? fetch(`${WORKER_URL}/admin/beta-videos?problem=${hashtagProblem}&includeDeleted=0`, {
+              headers: { Authorization: `Bearer ${authToken}` },
+            })
+          : Promise.resolve(null),
+      ]);
+
+      const data = await hashtagRes.json();
+      if (!hashtagRes.ok) {
         setHashtagError(data.error || '검색 실패');
         setHashtagLoading(false);
         return;
       }
+
+      // Build set of already-registered permalinks for the selected problem
+      if (videosRes?.ok) {
+        const videosData = await videosRes.json();
+        const registered = new Set<string>(
+          (videosData.videos || []).map((v: BetaVideo) => v.videoUrl)
+        );
+        setRegisteredUrls(registered);
+      } else {
+        setRegisteredUrls(new Set());
+      }
+
       setHashtagResults(data.data || []);
       setShowHashtagModal(true);
     } catch {
@@ -522,22 +543,30 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
 
               <div className={styles.igGrid}>
                 {hashtagResults.map(post => {
+                  const isRegistered = registeredUrls.has(post.permalink);
                   const isSelected = selectedPostIds.has(post.id);
-                  const thumb = post.thumbnail_url || post.media_url;
+                  const rawThumb = post.thumbnail_url || post.media_url;
+                  const thumb = rawThumb
+                    ? `${WORKER_URL}/proxy/image?url=${encodeURIComponent(rawThumb)}`
+                    : null;
                   return (
                     <div
                       key={post.id}
-                      className={`${styles.igCard} ${isSelected ? styles.igCardSelected : ''}`}
-                      onClick={() => toggleSelectPost(post.id)}
+                      className={`${styles.igCard} ${isSelected ? styles.igCardSelected : ''} ${isRegistered ? styles.igCardRegistered : ''}`}
+                      onClick={() => !isRegistered && toggleSelectPost(post.id)}
                     >
-                      <div className={styles.igCardCheckbox}>
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleSelectPost(post.id)}
-                          onClick={e => e.stopPropagation()}
-                        />
-                      </div>
+                      {isRegistered ? (
+                        <div className={styles.igRegisteredBadge}>✓ 등록됨</div>
+                      ) : (
+                        <div className={styles.igCardCheckbox}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectPost(post.id)}
+                            onClick={e => e.stopPropagation()}
+                          />
+                        </div>
+                      )}
                       {thumb ? (
                         <img
                           className={styles.igCardImg}
