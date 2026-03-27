@@ -29,7 +29,7 @@ export async function handleGetBetaVideos(
 
   try {
     const { results } = await env.DB.prepare(
-      'SELECT id, video_url, platform, thumbnail_url, submitted_at FROM beta_videos WHERE problem_slug = ? AND status = ? AND deleted_at IS NULL ORDER BY submitted_at DESC'
+      'SELECT id, video_url, platform, thumbnail_url, submitted_at, instagram_username, instagram_timestamp FROM beta_videos WHERE problem_slug = ? AND status = ? AND deleted_at IS NULL ORDER BY submitted_at DESC'
     ).bind(problemSlug, 'approved').all();
 
     const videos = results.map((row: any) => ({
@@ -39,6 +39,8 @@ export async function handleGetBetaVideos(
       platform: row.platform || 'instagram',
       thumbnailUrl: row.thumbnail_url,
       submittedAt: row.submitted_at,
+      instagramUsername: row.instagram_username || null,
+      instagramTimestamp: row.instagram_timestamp || null,
     }));
 
     return jsonResponse({ videos }, 200, corsHeaders);
@@ -64,6 +66,8 @@ export async function handleSubmitBetaVideo(
       videoUrl?: string;
       instagramUrl?: string; // legacy field name
       thumbnailUrl?: string | null;
+      instagramUsername?: string | null;
+      instagramTimestamp?: string | null;
     };
     const { problemSlug } = body;
     const videoUrl = body.videoUrl || body.instagramUrl;
@@ -96,9 +100,11 @@ export async function handleSubmitBetaVideo(
 
     // Use provided thumbnail if available, otherwise skip (Instagram OG scraping doesn't work without login)
     const thumbnailUrl = body.thumbnailUrl || null;
+    const instagramUsername = body.instagramUsername || null;
+    const instagramTimestamp = body.instagramTimestamp || null;
 
     const result = await env.DB.prepare(
-      'INSERT INTO beta_videos (problem_slug, video_url, post_id, platform, thumbnail_url, submitted_at, status) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO beta_videos (problem_slug, video_url, post_id, platform, thumbnail_url, submitted_at, status, instagram_username, instagram_timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ).bind(
       problemSlug,
       videoUrl,
@@ -106,7 +112,9 @@ export async function handleSubmitBetaVideo(
       platform,
       thumbnailUrl,
       new Date().toISOString(),
-      'approved'
+      'approved',
+      instagramUsername,
+      instagramTimestamp
     ).run();
 
     return jsonResponse({ success: true, id: result.meta.last_row_id }, 201, corsHeaders);

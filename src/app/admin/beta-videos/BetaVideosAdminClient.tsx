@@ -26,6 +26,8 @@ interface InstagramPost {
   thumbnail_url?: string;
   permalink: string;
   media_type: string;
+  username?: string;
+  timestamp?: string;
 }
 
 interface IgStatus {
@@ -378,6 +380,8 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
             problemSlug: hashtagProblem,
             videoUrl: post.permalink,
             thumbnailUrl: post.media_url || post.thumbnail_url || null,
+            instagramUsername: post.username || null,
+            instagramTimestamp: post.timestamp || null,
           }),
         });
         if (res.ok) {

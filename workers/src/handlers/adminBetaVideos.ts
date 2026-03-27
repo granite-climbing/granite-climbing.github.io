@@ -35,7 +35,7 @@ export async function handleAdminGetBetaVideos(
 
   try {
     let query =
-      'SELECT id, problem_slug, video_url, platform, thumbnail_url, submitted_at, status, post_id, deleted_at FROM beta_videos';
+      'SELECT id, problem_slug, video_url, platform, thumbnail_url, submitted_at, status, post_id, deleted_at, instagram_username, instagram_timestamp FROM beta_videos';
     const conditions: string[] = [];
     const bindings: string[] = [];
 
@@ -68,6 +68,8 @@ export async function handleAdminGetBetaVideos(
       status: row.status,
       postId: row.post_id,
       deletedAt: row.deleted_at,
+      instagramUsername: row.instagram_username || null,
+      instagramTimestamp: row.instagram_timestamp || null,
     }));
 
     return jsonResponse({ videos, total: videos.length }, 200, corsHeaders);
