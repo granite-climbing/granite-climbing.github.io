@@ -2,29 +2,38 @@
  * Cloudflare Worker - Granite Climbing API
  *
  * Provides:
- * 1. Instagram hashtag media search proxy (keeps access token secure)
+ * 1. Instagram hashtag media search proxy (token stored in D1)
  * 2. Beta video submission and retrieval (D1 database)
  * 3. Admin beta video management (list, soft delete)
+ * 4. Instagram OAuth flow (connect, callback, status, refresh, disconnect)
+ * 5. Admin Instagram hashtag search (uses DB token)
  *
  * Environment variables (set via `wrangler secret put`):
- *   INSTAGRAM_ACCESS_TOKEN  - Long-lived user access token
- *   INSTAGRAM_USER_ID       - Instagram Business Account ID
- *
- * Environment variables (set in wrangler.toml [vars]):
- *   ALLOWED_ORIGIN          - CORS origin (e.g. https://granite-climbing.github.io)
+ *   INSTAGRAM_APP_ID      - Facebook App ID (client_id)
+ *   INSTAGRAM_APP_SECRET  - Facebook App Secret (client_secret)
+ *   ALLOWED_ORIGIN        - Frontend origin for OAuth callback redirect
  *
  * D1 Database bindings:
- *   DB                      - Beta videos database
+ *   DB                    - Beta videos + Instagram tokens database
  */
 
 import { createCorsHeaders, jsonResponse } from './utils/response';
 import { handleHashtagSearch } from './handlers/hashtag';
 import { handleGetBetaVideos, handleSubmitBetaVideo } from './handlers/betaVideos';
 import { handleAdminGetBetaVideos, handleAdminDeleteBetaVideo } from './handlers/adminBetaVideos';
+import {
+  handleGetInstagramAuthUrl,
+  handleInstagramCallback,
+  handleGetInstagramStatus,
+  handleRefreshInstagramToken,
+  handleDeleteInstagramToken,
+  handleAdminHashtagSearch,
+} from './handlers/instagramAuth';
 
 interface Env {
-  INSTAGRAM_ACCESS_TOKEN: string;
-  INSTAGRAM_USER_ID: string;
+  INSTAGRAM_APP_ID: string;
+  INSTAGRAM_APP_SECRET: string;
+  ALLOWED_ORIGIN: string;
   DB: D1Database;
 }
 
@@ -69,7 +78,61 @@ export default {
       }
     }
 
-    // Route: Instagram hashtag search (default)
+    // Route: Instagram OAuth - get authorization URL
+    if (url.pathname === '/admin/instagram/auth-url') {
+      if (request.method === 'GET') {
+        return handleGetInstagramAuthUrl(request, env, corsHeaders);
+      } else {
+        return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+      }
+    }
+
+    // Route: Instagram OAuth - callback (public, no auth)
+    if (url.pathname === '/instagram/callback') {
+      if (request.method === 'GET') {
+        return handleInstagramCallback(request, env);
+      } else {
+        return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+      }
+    }
+
+    // Route: Instagram token status
+    if (url.pathname === '/admin/instagram/status') {
+      if (request.method === 'GET') {
+        return handleGetInstagramStatus(request, env, corsHeaders);
+      } else {
+        return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+      }
+    }
+
+    // Route: Instagram token refresh
+    if (url.pathname === '/admin/instagram/refresh') {
+      if (request.method === 'POST') {
+        return handleRefreshInstagramToken(request, env, corsHeaders);
+      } else {
+        return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+      }
+    }
+
+    // Route: Instagram token delete (disconnect)
+    if (url.pathname === '/admin/instagram/token') {
+      if (request.method === 'DELETE') {
+        return handleDeleteInstagramToken(request, env, corsHeaders);
+      } else {
+        return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+      }
+    }
+
+    // Route: Admin Instagram hashtag search
+    if (url.pathname === '/admin/instagram/hashtag') {
+      if (request.method === 'GET') {
+        return handleAdminHashtagSearch(request, env, corsHeaders);
+      } else {
+        return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+      }
+    }
+
+    // Route: Instagram hashtag search (public)
     if (request.method !== 'GET') {
       return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
     }
