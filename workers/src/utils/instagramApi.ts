@@ -17,31 +17,38 @@ export interface InstagramMediaItem {
   media_type: string;
 }
 
+export interface HashtagMediaResult {
+  items: InstagramMediaItem[];
+  nextCursor: string | null;
+}
+
 /**
  * Search recent media for a hashtag using the Instagram Graph API
  */
 export async function searchHashtagMedia(
   tag: string,
   accessToken: string,
-  userId: string
-): Promise<InstagramMediaItem[]> {
+  userId: string,
+  after?: string
+): Promise<HashtagMediaResult> {
   const hashtagId = await getHashtagId(tag, accessToken, userId);
-  if (!hashtagId) return [];
+  if (!hashtagId) return { items: [], nextCursor: null };
 
   // Hashtag API supports limited fields: id, media_url, thumbnail_url, permalink, media_type
   // These must be requested inline — individual media IDs from hashtag API cannot be queried directly
-  const mediaUrl =
+  let mediaUrl =
     `${INSTAGRAM_API}/${hashtagId}/top_media` +
     `?user_id=${userId}` +
     `&fields=id,media_url,permalink,media_type` +
     `&limit=30` +
     `&access_token=${accessToken}`;
+  if (after) mediaUrl += `&after=${encodeURIComponent(after)}`;
 
   const res = await fetch(mediaUrl);
   const rawText = await res.text();
   if (!res.ok) {
     console.error('[hashtag] top_media failed:', res.status, rawText);
-    return [];
+    return { items: [], nextCursor: null };
   }
 
   const data = JSON.parse(rawText) as {
@@ -52,11 +59,11 @@ export async function searchHashtagMedia(
       permalink?: string;
       media_type?: string;
     }[];
+    paging?: { cursors?: { after?: string }; next?: string };
   };
-  console.log('[hashtag] top_media raw:', rawText);
   console.log('[hashtag] top_media count:', data.data?.length ?? 0);
 
-  return (data.data ?? [])
+  const items = (data.data ?? [])
     .filter((item) => item.permalink)
     .map((item) => ({
       id: item.id,
@@ -65,6 +72,10 @@ export async function searchHashtagMedia(
       permalink: item.permalink!,
       media_type: item.media_type || 'IMAGE',
     }));
+
+  const nextCursor = data.paging?.next ? (data.paging.cursors?.after ?? null) : null;
+
+  return { items, nextCursor };
 }
 
 /**

@@ -370,11 +370,13 @@ export async function handleAdminHashtagSearch(
     return jsonResponse({ error: 'Instagram not connected' }, 400, corsHeaders);
   }
 
+  const after = url.searchParams.get('after') || undefined;
+
   try {
     // Strip leading # if present
     const cleanTag = hashtag.replace(/^#/, '');
-    const media = await searchHashtagMedia(cleanTag, row.access_token, row.user_id);
-    return jsonResponse({ data: media }, 200, corsHeaders);
+    const result = await searchHashtagMedia(cleanTag, row.access_token, row.user_id, after);
+    return jsonResponse({ data: result.items, nextCursor: result.nextCursor }, 200, corsHeaders);
   } catch (err) {
     console.error('Admin hashtag search error:', err);
     return jsonResponse({ error: 'Failed to fetch Instagram data' }, 502, corsHeaders);

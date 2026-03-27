@@ -104,6 +104,8 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
   const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
   const [registeredUrls, setRegisteredUrls] = useState<Set<string>>(new Set());
   const [registering, setRegistering] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     const token = getDecapToken();
@@ -279,6 +281,7 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
     setHashtagError('');
     setHashtagResults([]);
     setSelectedPostIds(new Set());
+    setNextCursor(null);
 
     try {
       const params = new URLSearchParams({ hashtag: hashtagQuery.trim() });
@@ -312,11 +315,32 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
       }
 
       setHashtagResults(data.data || []);
+      setNextCursor(data.nextCursor || null);
       setShowHashtagModal(true);
     } catch {
       setHashtagError('검색 중 오류가 발생했습니다.');
     } finally {
       setHashtagLoading(false);
+    }
+  }
+
+  async function loadMoreHashtag() {
+    if (!authToken || !hashtagQuery.trim() || !nextCursor) return;
+    setLoadingMore(true);
+    try {
+      const params = new URLSearchParams({ hashtag: hashtagQuery.trim(), after: nextCursor });
+      const res = await fetch(`${WORKER_URL}/admin/instagram/hashtag?${params}`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setHashtagResults(prev => [...prev, ...(data.data || [])]);
+        setNextCursor(data.nextCursor || null);
+      }
+    } catch {
+      // silently ignore
+    } finally {
+      setLoadingMore(false);
     }
   }
 
@@ -596,6 +620,18 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
                   );
                 })}
               </div>
+
+              {nextCursor && (
+                <div className={styles.loadMoreRow}>
+                  <button
+                    className={styles.loadMoreBtn}
+                    onClick={loadMoreHashtag}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? '불러오는 중...' : '더 불러오기'}
+                  </button>
+                </div>
+              )}
 
               <div className={styles.modalFooter}>
                 <button className={styles.modalCancelBtn} onClick={() => setShowHashtagModal(false)}>

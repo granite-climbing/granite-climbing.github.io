@@ -584,6 +584,23 @@
 
 /* ─── Modal Footer ──────────────────────────────────────────── */
 
+.loadMoreRow {
+  display: flex;
+  justify-content: center;
+  padding: 8px 24px 0;
+}
+.loadMoreBtn {
+  padding: 8px 24px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.loadMoreBtn:hover:not(:disabled) { background: #e2e8f0; }
+.loadMoreBtn:disabled { opacity: 0.5; cursor: default; }
+
 .modalFooter {
   display: flex;
   align-items: center;
