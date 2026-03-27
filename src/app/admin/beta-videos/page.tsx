@@ -4,6 +4,7 @@ import BetaVideosAdminClient from './BetaVideosAdminClient';
 export type ProblemMeta = {
   title: string;
   url: string; // /crag/[cragSlug]/boulder/[boulderSlug]#[topoSlug]
+  hashtag: string;
 };
 
 function buildProblemMap(): Record<string, ProblemMeta> {
@@ -23,6 +24,7 @@ function buildProblemMap(): Record<string, ProblemMeta> {
     map[p.slug] = {
       title: p.title,
       url: `/crag/${boulder.crag}/boulder/${boulder.slug}#${topo.slug}`,
+      hashtag: p.hashtag,
     };
   }
   return map;
