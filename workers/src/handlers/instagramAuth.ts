@@ -72,7 +72,7 @@ export async function handleGetInstagramAuthUrl(
     state,
   });
 
-  const url = `https://api.instagram.com/oauth/authorize?${params}`;
+  const url = `https://www.facebook.com/dialog/oauth?${params}`;
   return jsonResponse({ url }, 200, corsHeaders);
 }
 
@@ -122,37 +122,68 @@ export async function handleInstagramCallback(
     const workerOrigin = new URL(request.url).origin;
     const redirectUri = `${workerOrigin}/instagram/callback`;
 
-    // Step 1: Exchange code for short-lived token
-    const tokenForm = new URLSearchParams({
-      client_id: env.INSTAGRAM_APP_ID,
-      client_secret: env.INSTAGRAM_APP_SECRET,
-      grant_type: 'authorization_code',
-      redirect_uri: redirectUri,
-      code,
-    });
+    // Step 1: Exchange code for short-lived token via Graph API (GET)
+    const tokenRes = await fetch(
+      `https://graph.facebook.com/v21.0/oauth/access_token` +
+        `?client_id=${env.INSTAGRAM_APP_ID}` +
+        `&client_secret=${env.INSTAGRAM_APP_SECRET}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&code=${code}`
+    );
 
-    const shortTokenRes = await fetch('https://api.instagram.com/oauth/access_token', {
-      method: 'POST',
-      body: tokenForm,
-    });
-
-    if (!shortTokenRes.ok) {
-      const errText = await shortTokenRes.text();
-      console.error('Short token exchange failed:', errText);
+    if (!tokenRes.ok) {
+      const errText = await tokenRes.text();
+      console.error('Token exchange failed:', errText);
       return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=token_exchange`, 302);
     }
 
-    const shortTokenData = (await shortTokenRes.json()) as {
+    const tokenData = (await tokenRes.json()) as {
       access_token: string;
-      user_id: number;
+      token_type: string;
+      expires_in?: number;
     };
 
-    // Step 2: Exchange short-lived token for long-lived token (60 days)
+    // Step 2: Get Instagram Business Account ID via /me/accounts
+    let userId: string;
+    try {
+      const accountsRes = await fetch(
+        `https://graph.facebook.com/v21.0/me/accounts` +
+          `?fields=instagram_business_account` +
+          `&access_token=${tokenData.access_token}`
+      );
+      if (accountsRes.ok) {
+        const accountsData = (await accountsRes.json()) as {
+          data: { instagram_business_account?: { id: string } }[];
+        };
+        const igId = accountsData.data?.[0]?.instagram_business_account?.id;
+        if (igId) {
+          userId = igId;
+        } else {
+          // Fallback: use Facebook user ID
+          const meRes = await fetch(
+            `https://graph.facebook.com/v21.0/me?fields=id&access_token=${tokenData.access_token}`
+          );
+          const meData = (await meRes.json()) as { id: string };
+          userId = meData.id;
+        }
+      } else {
+        // Fallback: use Facebook user ID
+        const meRes = await fetch(
+          `https://graph.facebook.com/v21.0/me?fields=id&access_token=${tokenData.access_token}`
+        );
+        const meData = (await meRes.json()) as { id: string };
+        userId = meData.id;
+      }
+    } catch {
+      return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=user_id_fetch`, 302);
+    }
+
+    // Step 3: Exchange short-lived token for long-lived token (60 days)
     const longTokenRes = await fetch(
       `https://graph.facebook.com/v21.0/oauth/access_token` +
         `?grant_type=ig_exchange_token` +
         `&client_secret=${env.INSTAGRAM_APP_SECRET}` +
-        `&access_token=${shortTokenData.access_token}`
+        `&access_token=${tokenData.access_token}`
     );
 
     if (!longTokenRes.ok) {
@@ -169,7 +200,6 @@ export async function handleInstagramCallback(
 
     const now = new Date().toISOString();
     const expiresAt = new Date(Date.now() + longTokenData.expires_in * 1000).toISOString();
-    const userId = String(shortTokenData.user_id);
 
     // Upsert: delete existing token, insert new one
     await env.DB.prepare('DELETE FROM instagram_tokens').run();
