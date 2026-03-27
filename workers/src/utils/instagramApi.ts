@@ -78,21 +78,37 @@ export async function searchHashtagMedia(
   // Attempt to fetch username and timestamp for each media item via individual API calls.
   // Hashtag API does not return these fields directly; individual lookups may or may not
   // be permitted depending on token permissions — failures are silently ignored.
+  console.log(`[hashtag] fetching username/timestamp for ${baseItems.length} items`);
   const detailResults = await Promise.allSettled(
     baseItems.map((item) =>
       fetch(
         `${INSTAGRAM_API}/${item.id}?fields=username,timestamp&access_token=${accessToken}`
-      ).then((r) => (r.ok ? (r.json() as Promise<{ username?: string; timestamp?: string }>) : null))
+      ).then(async (r) => {
+        const text = await r.text();
+        if (!r.ok) {
+          console.warn(`[hashtag] detail fetch failed for ${item.id}: ${r.status} ${text}`);
+          return null;
+        }
+        const json = JSON.parse(text) as { username?: string; timestamp?: string };
+        console.log(`[hashtag] detail ${item.id}: username=${json.username ?? 'null'} timestamp=${json.timestamp ?? 'null'}`);
+        return json;
+      })
     )
   );
 
+  let successCount = 0;
   const items: InstagramMediaItem[] = baseItems.map((item, i) => {
     const result = detailResults[i];
     if (result.status === 'fulfilled' && result.value) {
+      successCount++;
       return { ...item, username: result.value.username, timestamp: result.value.timestamp };
+    }
+    if (result.status === 'rejected') {
+      console.error(`[hashtag] detail fetch rejected for ${item.id}:`, result.reason);
     }
     return item;
   });
+  console.log(`[hashtag] username/timestamp resolved: ${successCount}/${baseItems.length}`);
 
   const nextCursor = data.paging?.next ? (data.paging.cursors?.after ?? null) : null;
 
