@@ -28,38 +28,43 @@ export async function searchHashtagMedia(
   const hashtagId = await getHashtagId(tag, accessToken, userId);
   if (!hashtagId) return [];
 
+  // Hashtag API supports limited fields: id, media_url, thumbnail_url, permalink, media_type
+  // These must be requested inline — individual media IDs from hashtag API cannot be queried directly
   const mediaUrl =
-    `${INSTAGRAM_API}/${hashtagId}/recent_media` +
+    `${INSTAGRAM_API}/${hashtagId}/top_media` +
     `?user_id=${userId}` +
-    `&fields=id,media_url,thumbnail_url,permalink,media_type` +
+    `&fields=id,media_url,permalink,media_type` +
     `&limit=30` +
     `&access_token=${accessToken}`;
 
   const res = await fetch(mediaUrl);
+  const rawText = await res.text();
   if (!res.ok) {
-    const errText = await res.text();
-    console.error('[hashtag] recent_media failed:', res.status, errText);
+    console.error('[hashtag] top_media failed:', res.status, rawText);
     return [];
   }
 
-  const data = (await res.json()) as {
-    data: {
+  const data = JSON.parse(rawText) as {
+    data?: {
       id: string;
       media_url?: string;
       thumbnail_url?: string;
-      permalink: string;
-      media_type: string;
+      permalink?: string;
+      media_type?: string;
     }[];
   };
-  console.log('[hashtag] recent_media count:', data.data?.length ?? 0);
+  console.log('[hashtag] top_media raw:', rawText);
+  console.log('[hashtag] top_media count:', data.data?.length ?? 0);
 
-  return data.data.map((item) => ({
-    id: item.id,
-    media_url: item.media_url || '',
-    thumbnail_url: item.thumbnail_url,
-    permalink: item.permalink,
-    media_type: item.media_type,
-  }));
+  return (data.data ?? [])
+    .filter((item) => item.permalink)
+    .map((item) => ({
+      id: item.id,
+      media_url: item.media_url || item.thumbnail_url || '',
+      thumbnail_url: item.thumbnail_url,
+      permalink: item.permalink!,
+      media_type: item.media_type || 'IMAGE',
+    }));
 }
 
 /**
@@ -82,15 +87,9 @@ export async function getHashtagId(
     `&access_token=${accessToken}`;
 
   const res = await fetch(searchUrl);
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error('[hashtag] ig_hashtag_search failed:', res.status, errText);
-    return null;
-  }
+  if (!res.ok) return null;
 
   const data = (await res.json()) as { data: { id: string }[] };
-  console.log('[hashtag] ig_hashtag_search response:', JSON.stringify(data));
-
   if (data.data.length === 0) return null;
 
   const id = data.data[0].id;
