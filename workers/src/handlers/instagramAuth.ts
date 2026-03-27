@@ -178,12 +178,14 @@ export async function handleInstagramCallback(
       return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=user_id_fetch`, 302);
     }
 
-    // Step 3: Exchange short-lived token for long-lived token (60 days)
+    // Step 3: Exchange short-lived token for long-lived user access token (60 days)
+    // Facebook Login uses fb_exchange_token (not ig_exchange_token which is Basic Display only)
     const longTokenRes = await fetch(
       `https://graph.facebook.com/v21.0/oauth/access_token` +
-        `?grant_type=ig_exchange_token` +
+        `?grant_type=fb_exchange_token` +
+        `&client_id=${env.INSTAGRAM_APP_ID}` +
         `&client_secret=${env.INSTAGRAM_APP_SECRET}` +
-        `&access_token=${tokenData.access_token}`
+        `&fb_exchange_token=${tokenData.access_token}`
     );
 
     if (!longTokenRes.ok) {
@@ -274,10 +276,13 @@ export async function handleRefreshInstagramToken(
   }
 
   try {
+    // Facebook Login long-lived tokens are refreshed via fb_exchange_token
     const refreshRes = await fetch(
-      `https://graph.facebook.com/v21.0/refresh_access_token` +
-        `?grant_type=ig_refresh_token` +
-        `&access_token=${row.access_token}`
+      `https://graph.facebook.com/v21.0/oauth/access_token` +
+        `?grant_type=fb_exchange_token` +
+        `&client_id=${env.INSTAGRAM_APP_ID}` +
+        `&client_secret=${env.INSTAGRAM_APP_SECRET}` +
+        `&fb_exchange_token=${row.access_token}`
     );
 
     if (!refreshRes.ok) {
