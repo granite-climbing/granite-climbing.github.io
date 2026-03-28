@@ -17,7 +17,7 @@
  * - oEmbed: https://developers.facebook.com/docs/instagram-platform/oembed
  */
 
-import { fetchOembedInfo } from '../utils/instagramApi';
+import { igApi } from '../utils/IgApiFacebookLogin';
 
 interface Env {
   DB: D1Database;
@@ -180,61 +180,28 @@ async function processMention(
   let mentionThumb: string | undefined;
   let mentionUsername: string | undefined;
   let mentionMediaId: string | undefined = mediaId;
-  const mediaFields = 'caption,media_type,media_url,thumbnail_url,timestamp,username,permallink'
 
   if (commentId) {
     // Fetch via mentioned_comment API when comment_id is present
-    // > https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/mentioned_comment#reading
-    const commentRes = await fetch(
-      `https://graph.facebook.com/v21.0/${userId}` +
-        `?fields=mentioned_comment.comment_id(${commentId}){text,timestamp,media{${mediaFields}}}` +
-        `&access_token=${accessToken}`
-    );
-    if (!commentRes.ok) {
-      const errText = await commentRes.text();
-      console.error('[webhook] mentioned_comment fetch failed:', commentRes.status, errText);
+    const commentData = await igApi.getMentionedComment(userId, commentId, accessToken);
+    if (!commentData) {
+      console.error('[webhook] mentioned_comment fetch failed');
       return;
     }
-    const commentData = (await commentRes.json()) as {
-      mentioned_comment?: { text?: string; timestamp?: string; media?: { id: string }; id?: string };
-      id: string;
-    };
-    console.log('[webhook] mentioned_comment response:', JSON.stringify(commentData));
-    caption = commentData.mentioned_comment?.text;
-    mentionMediaId = commentData.mentioned_comment?.media?.id ?? mediaId;
+    caption = commentData.text;
+    mentionMediaId = commentData.media?.id ?? mediaId;
   } else {
     // Fetch via mentioned_media API when only media_id is present
-    // > https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/mentioned_media#reading
-    ;
-    const mediaRes = await fetch(
-      `https://graph.facebook.com/v21.0/${userId}` +
-        `?fields=mentioned_media.media_id(${mediaId}){${mediaFields}}` +
-        `&access_token=${accessToken}`
-    );
-    if (!mediaRes.ok) {
-      const errText = await mediaRes.text();
-      console.error('[webhook] mentioned_media fetch failed:', mediaRes.status, errText);
+    const mediaData = await igApi.getMentionedMedia(userId, mediaId, accessToken);
+    if (!mediaData) {
+      console.error('[webhook] mentioned_media fetch failed');
       return;
     }
-    const mediaData = (await mediaRes.json()) as {
-      mentioned_media?: {
-        caption?: string;
-        media_url?: string;
-        thumbnail_url?: string;
-        media_type?: string;
-        timestamp?: string;
-        username?: string;
-        id?: string;
-      };
-      id: string;
-    };
-    console.log('[webhook] mentioned_media response:', JSON.stringify(mediaData));
-    const m = mediaData.mentioned_media ?? {};
-    caption = m.caption;
-    media_url = m.media_url;
-    mentionThumb = m.thumbnail_url;
-    mentionUsername = m.username;
-    mentionMediaId = m.id ?? mediaId;
+    caption = mediaData.caption;
+    media_url = mediaData.media_url;
+    mentionThumb = mediaData.thumbnail_url;
+    mentionUsername = mediaData.username;
+    mentionMediaId = mediaData.id ?? mediaId;
   }
 
   // Construct permalink from media ID (format: instagram.com/p/{media-id}/)
@@ -284,7 +251,7 @@ async function processMention(
   let instagramUsername: string | null = mentionUsername ?? null;
   let thumbnailUrl: string | null = mentionThumb ?? media_url ?? null;
 
-  const oembedInfo = await fetchOembedInfo(permalink, appToken).catch(() => null);
+  const oembedInfo = await igApi.fetchOembed(permalink, appToken).catch(() => null);
   if (oembedInfo) {
     if (!instagramUsername) instagramUsername = oembedInfo.author_name ?? null;
     if (oembedInfo.thumbnail_url) thumbnailUrl = oembedInfo.thumbnail_url;

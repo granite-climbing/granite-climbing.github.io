@@ -13,6 +13,7 @@
 import { jsonResponse } from '../utils/response';
 import { requireAdminAuth } from '../utils/auth';
 import { searchHashtagMedia } from '../utils/instagramApi';
+import { igApi } from '../utils/IgApiFacebookLogin';
 
 interface Env {
   INSTAGRAM_APP_ID: string;
@@ -133,28 +134,13 @@ export async function handleInstagramCallback(
     const redirectUri = `${workerOrigin}/instagram/callback`;
 
     // Step 1: Exchange code for short-lived token via Graph API (GET)
-    const tokenRes = await fetch(
-      `https://graph.facebook.com/v21.0/oauth/access_token` +
-        `?client_id=${env.INSTAGRAM_APP_ID}` +
-        `&client_secret=${env.INSTAGRAM_APP_SECRET}` +
-        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-        `&code=${code}`
-    );
+    const tokenData = await igApi.exchangeCodeForToken(code, redirectUri, env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET);
 
-    if (!tokenRes.ok) {
-      const errText = await tokenRes.text();
-      console.error('Token exchange failed:', errText);
+    if (!tokenData) {
       return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=token_exchange`, 302);
     }
 
-    const tokenRaw = await tokenRes.json();
-    console.log('[oauth] step1 token response:', JSON.stringify({ ...tokenRaw as object, access_token: '***' }));
-
-    const tokenData = tokenRaw as {
-      access_token: string;
-      token_type: string;
-      expires_in?: number;
-    };
+    console.log('[oauth] step1 token response: access_token=***');
 
     // Step 2: Get Instagram Business Account ID, username, and Page ID via /me/accounts
     let userId: string;
@@ -162,48 +148,18 @@ export async function handleInstagramCallback(
     let pageAccessToken: string | null = null;
     let igUsername: string | null = null;
     try {
-      const accountsRes = await fetch(
-        `https://graph.facebook.com/v21.0/me/accounts` +
-          `?fields=id,access_token,instagram_business_account` +
-          `&access_token=${tokenData.access_token}`
-      );
-      if (accountsRes.ok) {
-        const accountsData = (await accountsRes.json()) as {
-          data: { id: string; access_token: string; instagram_business_account?: { id: string } }[];
-        };
-        console.log('[oauth] step2 accounts response:', JSON.stringify(accountsData));
-        const page = accountsData.data?.[0];
-        const igId = page?.instagram_business_account?.id;
-        if (igId) {
-          userId = igId;
-          pageId = page.id;
-          pageAccessToken = page.access_token;
-          // Fetch Instagram username via the IG Business Account node
-          try {
-            const igUserRes = await fetch(
-              `https://graph.facebook.com/v21.0/${igId}?fields=username&access_token=${tokenData.access_token}`
-            );
-            if (igUserRes.ok) {
-              const igUserData = (await igUserRes.json()) as { id: string; username?: string };
-              igUsername = igUserData.username ?? null;
-              console.log('[oauth] ig username:', igUsername);
-            }
-          } catch {
-            // username is optional — proceed without it
-          }
-        } else {
-          // Fallback: use Facebook user ID
-          console.warn('[callback] no instagram_business_account found — falling back to Facebook user ID');
-          const meRes = await fetch(
-            `https://graph.facebook.com/v21.0/me?fields=id&access_token=${tokenData.access_token}`
-          );
-          const meData = (await meRes.json()) as { id: string };
-          userId = meData.id;
-          console.log('[callback] fallback userId:', userId);
-        }
+      const accountsData = await igApi.getAccounts(tokenData.access_token);
+      const page = accountsData?.data?.[0];
+      const igId = page?.instagram_business_account?.id;
+      if (igId) {
+        userId = igId;
+        pageId = page!.id;
+        pageAccessToken = page!.access_token;
+        const igUserInfo = await igApi.getIgUserInfo(igId, tokenData.access_token).catch(() => null);
+        igUsername = igUserInfo?.username ?? null;
       } else {
         // Fallback: use Facebook user ID
-        console.warn('[callback] /me/accounts request failed — falling back to Facebook user ID');
+        console.warn('[callback] no instagram_business_account found — falling back to Facebook user ID');
         const meRes = await fetch(
           `https://graph.facebook.com/v21.0/me?fields=id&access_token=${tokenData.access_token}`
         );
@@ -218,29 +174,11 @@ export async function handleInstagramCallback(
 
     // Step 3: Exchange short-lived token for long-lived user access token (60 days)
     // Facebook Login uses fb_exchange_token (not ig_exchange_token which is Basic Display only)
-    const longTokenRes = await fetch(
-      `https://graph.facebook.com/v21.0/oauth/access_token` +
-        `?grant_type=fb_exchange_token` +
-        `&client_id=${env.INSTAGRAM_APP_ID}` +
-        `&client_secret=${env.INSTAGRAM_APP_SECRET}` +
-        `&fb_exchange_token=${tokenData.access_token}`
-    );
+    const longTokenData = await igApi.exchangeForLongLivedToken(tokenData.access_token, env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET);
 
-    if (!longTokenRes.ok) {
-      const errText = await longTokenRes.text();
-      console.error('Long token exchange failed:', errText);
+    if (!longTokenData) {
       return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=long_token_exchange`, 302);
     }
-
-    const longTokenRaw = await longTokenRes.json();
-    console.log('[oauth] long token response:', JSON.stringify(longTokenRaw));
-
-    const longTokenData = longTokenRaw as {
-      access_token: string;
-      token_type: string;
-      expires_in?: number;
-      expires_at?: number;
-    };
 
     const now = new Date().toISOString();
     let expiresAt: string;
@@ -265,24 +203,10 @@ export async function handleInstagramCallback(
     // Step 5: Subscribe Page to webhook (Facebook Login — required for mentions webhook)
     // https://developers.facebook.com/docs/graph-api/webhooks/getting-started/webhooks-for-instagram
     if (pageId && pageAccessToken) {
-      try {
-        const subscribeRes = await fetch(
-          `https://graph.facebook.com/v21.0/${pageId}/subscribed_apps`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-              access_token: pageAccessToken,
-              subscribed_fields: 'feed,mention',
-            }).toString(),
-          }
-        );
-        const subscribeData = await subscribeRes.json();
-        console.log('[callback] page webhook subscription — pageId=%s result=%s', pageId, JSON.stringify(subscribeData));
-      } catch (err) {
+      await igApi.subscribePageToWebhook(pageId, pageAccessToken).catch((err) => {
         // Non-fatal: webhook subscription failure should not block the OAuth flow
         console.error('[callback] page webhook subscription failed:', err);
-      }
+      });
     } else {
       console.warn('[callback] skipping page webhook subscription — pageId or pageAccessToken missing');
     }
@@ -360,27 +284,16 @@ export async function handleRefreshInstagramToken(
 
   try {
     // Facebook Login long-lived tokens are refreshed via fb_exchange_token
-    const refreshRes = await fetch(
-      `https://graph.facebook.com/v21.0/oauth/access_token` +
-        `?grant_type=fb_exchange_token` +
-        `&client_id=${env.INSTAGRAM_APP_ID}` +
-        `&client_secret=${env.INSTAGRAM_APP_SECRET}` +
-        `&fb_exchange_token=${row.access_token}`
-    );
+    const data = await igApi.refreshLongLivedToken(row.access_token, env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET);
 
-    if (!refreshRes.ok) {
-      const errText = await refreshRes.text();
-      console.error('Token refresh failed:', errText);
+    if (!data) {
       return jsonResponse({ error: 'Failed to refresh token' }, 502, corsHeaders);
     }
 
-    const data = (await refreshRes.json()) as {
-      access_token: string;
-      expires_in: number;
-    };
-
     const now = new Date().toISOString();
-    const expiresAt = new Date(Date.now() + data.expires_in * 1000).toISOString();
+    const expiresAt = data.expires_in
+      ? new Date(Date.now() + data.expires_in * 1000).toISOString()
+      : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
 
     await env.DB.prepare(
       'UPDATE instagram_tokens SET access_token = ?, expires_at = ?, updated_at = ?'
