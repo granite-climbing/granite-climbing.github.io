@@ -21,7 +21,7 @@
 import { createCorsHeaders, jsonResponse } from './utils/response';
 import { handleHashtagSearch } from './handlers/hashtag';
 import { handleGetBetaVideos, handleSubmitBetaVideo } from './handlers/betaVideos';
-import { handleAdminGetBetaVideos, handleAdminDeleteBetaVideo } from './handlers/adminBetaVideos';
+import { handleAdminGetBetaVideos, handleAdminDeleteBetaVideo, handleAdminDryRun } from './handlers/adminBetaVideos';
 import {
   handleGetInstagramAuthUrl,
   handleInstagramCallback,
@@ -66,6 +66,15 @@ export default {
     if (url.pathname === '/admin/beta-videos') {
       if (request.method === 'GET') {
         return handleAdminGetBetaVideos(request, env, corsHeaders);
+      } else {
+        return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+      }
+    }
+
+    // Route: Admin beta video dry-run (preview INSERT data with oEmbed enrichment)
+    if (url.pathname === '/admin/beta-videos/dry-run') {
+      if (request.method === 'POST') {
+        return handleAdminDryRun(request, env, corsHeaders);
       } else {
         return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
       }

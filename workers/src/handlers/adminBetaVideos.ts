@@ -6,9 +6,13 @@
 
 import { jsonResponse } from '../utils/response';
 import { requireAdminAuth } from '../utils/auth';
+import { detectPlatform, extractPostId } from '../utils/validation';
+import { fetchOembedInfo } from '../utils/instagramApi';
 
 interface Env {
   DB: D1Database;
+  INSTAGRAM_APP_ID?: string;
+  INSTAGRAM_APP_SECRET?: string;
 }
 
 /**
@@ -77,6 +81,70 @@ export async function handleAdminGetBetaVideos(
     console.error('Admin DB error:', error);
     return jsonResponse({ error: 'Failed to fetch beta videos' }, 500, corsHeaders);
   }
+}
+
+/**
+ * POST /admin/beta-videos/dry-run
+ * Preview what would be inserted for a list of Instagram permalinks.
+ * Calls oEmbed for each URL to resolve username and thumbnail — no DB write.
+ *
+ * Body: { problemSlug: string, items: { videoUrl: string, thumbnailUrl?: string | null }[] }
+ */
+export async function handleAdminDryRun(
+  request: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  const authError = await requireAdminAuth(request, corsHeaders);
+  if (authError) return authError;
+
+  const body = await request.json() as {
+    problemSlug?: string;
+    items?: { videoUrl: string; thumbnailUrl?: string | null }[];
+  };
+
+  if (!body.problemSlug || !Array.isArray(body.items) || body.items.length === 0) {
+    return jsonResponse({ error: 'Missing problemSlug or items' }, 400, corsHeaders);
+  }
+
+  const appToken = env.INSTAGRAM_APP_ID && env.INSTAGRAM_APP_SECRET
+    ? `${env.INSTAGRAM_APP_ID}|${env.INSTAGRAM_APP_SECRET}`
+    : null;
+
+  const now = new Date().toISOString();
+
+  const rows = await Promise.all(
+    body.items.map(async ({ videoUrl, thumbnailUrl: providedThumb }) => {
+      const platform = detectPlatform(videoUrl);
+      const postId = extractPostId(videoUrl, platform);
+      let thumbnailUrl = providedThumb ?? null;
+      let instagramUsername: string | null = null;
+
+      if (platform === 'instagram' && appToken) {
+        const oembedInfo = await fetchOembedInfo(videoUrl, appToken).catch(() => null);
+        if (oembedInfo) {
+          instagramUsername = oembedInfo.author_name ?? null;
+          if (!thumbnailUrl && oembedInfo.thumbnail_url) {
+            thumbnailUrl = oembedInfo.thumbnail_url;
+          }
+        }
+      }
+
+      return {
+        problem_slug: body.problemSlug,
+        video_url: videoUrl,
+        post_id: postId,
+        platform,
+        thumbnail_url: thumbnailUrl,
+        submitted_at: now,
+        status: 'approved',
+        instagram_username: instagramUsername,
+        instagram_timestamp: null,
+      };
+    })
+  );
+
+  return jsonResponse({ rows }, 200, corsHeaders);
 }
 
 /**

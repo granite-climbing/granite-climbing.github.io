@@ -72,8 +72,6 @@ function truncateUrl(url: string, max = 50): string {
   }
 }
 
-// --- Dry-run helpers (mirrors worker-side logic in validation.ts) ---
-
 interface DryRunRow {
   problem_slug: string;
   video_url: string;
@@ -84,29 +82,6 @@ interface DryRunRow {
   status: string;
   instagram_username: string | null;
   instagram_timestamp: string | null;
-}
-
-function clientDetectPlatform(url: string): string {
-  if (/instagram\.com/.test(url)) return 'instagram';
-  if (/youtube\.com|youtu\.be/.test(url)) return 'youtube';
-  if (/tiktok\.com/.test(url)) return 'tiktok';
-  return 'other';
-}
-
-function clientExtractPostId(url: string, platform: string): string | null {
-  if (platform === 'instagram') {
-    const m = url.match(/instagram\.com\/(p|reel)\/([A-Za-z0-9_-]+)/);
-    return m ? m[2] : null;
-  }
-  if (platform === 'youtube') {
-    const m = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]+)/);
-    return m ? m[1] : null;
-  }
-  if (platform === 'tiktok') {
-    const m = url.match(/video\/(\d+)/);
-    return m ? m[1] : null;
-  }
-  return null;
 }
 
 // -------------------------------------------------------------------
@@ -149,6 +124,7 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [dryRunRows, setDryRunRows] = useState<DryRunRow[] | null>(null);
+  const [dryRunLoading, setDryRunLoading] = useState(false);
 
   useEffect(() => {
     const token = getDecapToken();
@@ -404,27 +380,34 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
     }
   }
 
-  function dryRunSelected() {
-    if (!hashtagProblem || selectedPostIds.size === 0) return;
-    const selected = hashtagResults.filter(p => selectedPostIds.has(p.id));
-    const now = new Date().toISOString();
-    const rows: DryRunRow[] = selected.map(post => {
-      const videoUrl = post.permalink;
-      const platform = clientDetectPlatform(videoUrl);
-      const postId = clientExtractPostId(videoUrl, platform);
-      return {
-        problem_slug: hashtagProblem,
-        video_url: videoUrl,
-        post_id: postId,
-        platform,
-        thumbnail_url: post.media_url || post.thumbnail_url || null,
-        submitted_at: now,
-        status: 'approved',
-        instagram_username: post.username || null,
-        instagram_timestamp: post.timestamp || null,
-      };
-    });
-    setDryRunRows(rows);
+  async function dryRunSelected() {
+    if (!authToken || !hashtagProblem || selectedPostIds.size === 0) return;
+    setDryRunLoading(true);
+    setDryRunRows(null);
+    try {
+      const selected = hashtagResults.filter(p => selectedPostIds.has(p.id));
+      const res = await fetch(`${WORKER_URL}/admin/beta-videos/dry-run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({
+          problemSlug: hashtagProblem,
+          items: selected.map(p => ({
+            videoUrl: p.permalink,
+            thumbnailUrl: p.media_url || p.thumbnail_url || null,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDryRunRows(data.rows);
+      } else {
+        alert(data.error || 'Dry run 실패');
+      }
+    } catch {
+      alert('Dry run 중 오류가 발생했습니다.');
+    } finally {
+      setDryRunLoading(false);
+    }
   }
 
   async function registerSelectedAsBetaVideos() {
@@ -709,10 +692,10 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
                 <button
                   className={styles.modalDryRunBtn}
                   onClick={dryRunSelected}
-                  disabled={selectedPostIds.size === 0 || !hashtagProblem}
+                  disabled={selectedPostIds.size === 0 || !hashtagProblem || dryRunLoading}
                   title={!hashtagProblem ? '모달을 닫고 문제를 선택하세요' : 'DB에 저장될 데이터 미리보기'}
                 >
-                  🔍 Dry Run ({selectedPostIds.size})
+                  {dryRunLoading ? 'oEmbed 조회 중...' : `🔍 Dry Run (${selectedPostIds.size})`}
                 </button>
                 <button
                   className={styles.modalRegisterBtn}
