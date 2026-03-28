@@ -1,12 +1,21 @@
 /**
- * Beta Videos Handler
- * Manages user-submitted beta video links stored in D1 database
- * Supports multiple platforms: instagram, youtube, tiktok, other
+ * 베타 비디오 핸들러 (공개 + 관리자)
+ *
+ * 요청 파싱 + 서비스 호출 + HTTP 응답 반환만 담당합니다.
+ * 비즈니스 로직은 betaVideoService에 있습니다.
  */
 
 import { jsonResponse } from '../utils/response';
-import { detectPlatform, extractPostId } from '../utils/validation';
-import { fetchOembedInfo } from '../utils/instagramApi';
+import { requireAdminAuth } from '../utils/auth';
+import { IgApiFacebookLogin } from '../utils/IgApiFacebookLogin';
+import {
+  getApprovedVideos,
+  addVideoFromURL,
+  addVideoFromHashTag,
+  adminListVideos,
+  dryAddVideoFromHashTag,
+  deleteVideo,
+} from '../services/betaVideoService';
 
 interface Env {
   DB: D1Database;
@@ -14,49 +23,34 @@ interface Env {
   INSTAGRAM_APP_SECRET?: string;
 }
 
+// ─────────────────────────────────────────────
+// 공개 엔드포인트
+// ─────────────────────────────────────────────
+
 /**
- * Handle GET /beta-videos?problem=<slug>
- * Retrieve submitted beta videos for a specific problem
+ * GET /beta-videos?problem=<slug>
+ * 특정 문제의 승인된 베타 비디오 목록을 반환합니다.
  */
 export async function handleGetBetaVideos(
   request: Request,
   env: Env,
   corsHeaders: Record<string, string>
 ): Promise<Response> {
-  const url = new URL(request.url);
-  const problemSlug = url.searchParams.get('problem');
-
-  if (!problemSlug) {
-    return jsonResponse({ error: 'Missing problem parameter' }, 400, corsHeaders);
-  }
+  const problemSlug = new URL(request.url).searchParams.get('problem');
+  if (!problemSlug) return jsonResponse({ error: 'Missing problem parameter' }, 400, corsHeaders);
 
   try {
-    const { results } = await env.DB.prepare(
-      'SELECT id, video_url, platform, thumbnail_url, submitted_at, instagram_username, instagram_timestamp FROM beta_videos WHERE problem_slug = ? AND status = ? AND deleted_at IS NULL ORDER BY submitted_at DESC'
-    ).bind(problemSlug, 'approved').all();
-
-    const videos = results.map((row: any) => ({
-      id: row.id,
-      videoUrl: row.video_url,
-      instagramUrl: row.video_url, // backwards compatibility
-      platform: row.platform || 'instagram',
-      thumbnailUrl: row.thumbnail_url,
-      submittedAt: row.submitted_at,
-      instagramUsername: row.instagram_username || null,
-      instagramTimestamp: row.instagram_timestamp || null,
-    }));
-
+    const videos = await getApprovedVideos(env.DB, problemSlug);
     return jsonResponse({ videos }, 200, corsHeaders);
   } catch (error) {
-    console.error('Database error:', error);
+    console.error('[betaVideos] getApprovedVideos error:', error);
     return jsonResponse({ error: 'Failed to fetch beta videos' }, 500, corsHeaders);
   }
 }
 
 /**
- * Handle POST /beta-videos
- * Submit a new beta video link for a problem
- * Accepts both 'videoUrl' and legacy 'instagramUrl' parameter names
+ * POST /beta-videos
+ * 사용자가 URL을 직접 입력하여 베타 비디오를 등록합니다.
  */
 export async function handleSubmitBetaVideo(
   request: Request,
@@ -67,74 +61,162 @@ export async function handleSubmitBetaVideo(
     const body = await request.json() as {
       problemSlug?: string;
       videoUrl?: string;
-      instagramUrl?: string; // legacy field name
+      instagramUrl?: string;
       thumbnailUrl?: string | null;
       instagramUsername?: string | null;
       instagramTimestamp?: string | null;
     };
-    const { problemSlug } = body;
+
+    const problemSlug = body.problemSlug;
     const videoUrl = body.videoUrl || body.instagramUrl;
 
     if (!problemSlug || !videoUrl) {
       return jsonResponse({ error: 'Missing required fields' }, 400, corsHeaders);
     }
 
-    const platform = detectPlatform(videoUrl);
-    const postId = extractPostId(videoUrl, platform);
+    const igApi = env.INSTAGRAM_APP_ID && env.INSTAGRAM_APP_SECRET
+      ? new IgApiFacebookLogin(env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET)
+      : null;
 
-    // Check for duplicate (by problem + post ID if available, else by URL)
-    if (postId) {
-      const existing = await env.DB.prepare(
-        'SELECT id FROM beta_videos WHERE problem_slug = ? AND post_id = ? AND deleted_at IS NULL'
-      ).bind(problemSlug, postId).first();
+    const result = await addVideoFromURL(
+      env.DB,
+      { problemSlug, videoUrl, thumbnailUrl: body.thumbnailUrl, instagramUsername: body.instagramUsername, instagramTimestamp: body.instagramTimestamp },
+      igApi as IgApiFacebookLogin
+    );
 
-      if (existing) {
-        return jsonResponse({ error: 'Video already submitted for this problem' }, 409, corsHeaders);
-      }
-    } else {
-      const existing = await env.DB.prepare(
-        'SELECT id FROM beta_videos WHERE problem_slug = ? AND video_url = ? AND deleted_at IS NULL'
-      ).bind(problemSlug, videoUrl).first();
-
-      if (existing) {
-        return jsonResponse({ error: 'Video already submitted for this problem' }, 409, corsHeaders);
-      }
+    return jsonResponse({ success: true, id: result.id }, 201, corsHeaders);
+  } catch (err: any) {
+    if (err?.message === 'duplicate') {
+      return jsonResponse({ error: 'Video already submitted for this problem' }, 409, corsHeaders);
     }
-
-    // Use provided thumbnail if available
-    let thumbnailUrl = body.thumbnailUrl || null;
-    let instagramUsername = body.instagramUsername || null;
-    const instagramTimestamp = body.instagramTimestamp || null;
-
-    // Auto-enrich Instagram posts via oEmbed if username not already provided
-    if (platform === 'instagram' && !instagramUsername && env.INSTAGRAM_APP_ID && env.INSTAGRAM_APP_SECRET) {
-      const appToken = `${env.INSTAGRAM_APP_ID}|${env.INSTAGRAM_APP_SECRET}`;
-      const oembedInfo = await fetchOembedInfo(videoUrl, appToken).catch(() => null);
-      if (oembedInfo) {
-        instagramUsername = oembedInfo.author_name ?? null;
-        if (!thumbnailUrl && oembedInfo.thumbnail_url) {
-          thumbnailUrl = oembedInfo.thumbnail_url;
-        }
-      }
-    }
-
-    const result = await env.DB.prepare(
-      'INSERT INTO beta_videos (problem_slug, video_url, post_id, platform, thumbnail_url, submitted_at, status, instagram_username, instagram_timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).bind(
-      problemSlug,
-      videoUrl,
-      postId,
-      platform,
-      thumbnailUrl,
-      new Date().toISOString(),
-      'approved',
-      instagramUsername,
-      instagramTimestamp
-    ).run();
-
-    return jsonResponse({ success: true, id: result.meta.last_row_id }, 201, corsHeaders);
-  } catch (error) {
-    console.error('Submission error:', error);
+    console.error('[betaVideos] submit error:', err);
     return jsonResponse({ error: 'Failed to submit beta video' }, 500, corsHeaders);
+  }
+}
+
+// ─────────────────────────────────────────────
+// 관리자 엔드포인트
+// ─────────────────────────────────────────────
+
+/**
+ * GET /admin/beta-videos
+ * 베타 비디오 목록을 조회합니다 (platform, problem, includeDeleted 필터 지원).
+ */
+export async function handleAdminGetBetaVideos(
+  request: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  const authError = await requireAdminAuth(request, corsHeaders);
+  if (authError) return authError;
+
+  const url = new URL(request.url);
+
+  try {
+    const result = await adminListVideos(env.DB, {
+      platform: url.searchParams.get('platform'),
+      problem: url.searchParams.get('problem'),
+      includeDeleted: url.searchParams.has('includeDeleted'),
+    });
+    return jsonResponse(result, 200, corsHeaders);
+  } catch (error) {
+    console.error('[betaVideos] adminList error:', error);
+    return jsonResponse({ error: 'Failed to fetch beta videos' }, 500, corsHeaders);
+  }
+}
+
+/**
+ * POST /admin/beta-videos/dry-run
+ * 선택한 항목들을 oEmbed 보강 후 미리보기합니다 (DB 저장 없음).
+ */
+export async function handleAdminDryRun(
+  request: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  const authError = await requireAdminAuth(request, corsHeaders);
+  if (authError) return authError;
+
+  const body = await request.json() as {
+    problemSlug?: string;
+    items?: { videoUrl: string; thumbnailUrl?: string | null }[];
+  };
+
+  if (!body.problemSlug || !Array.isArray(body.items) || body.items.length === 0) {
+    return jsonResponse({ error: 'Missing problemSlug or items' }, 400, corsHeaders);
+  }
+
+  if (!env.INSTAGRAM_APP_ID || !env.INSTAGRAM_APP_SECRET) {
+    return jsonResponse({ error: 'Instagram app credentials not configured' }, 500, corsHeaders);
+  }
+
+  const igApi = new IgApiFacebookLogin(env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET);
+  const rows = await dryAddVideoFromHashTag(body.items, body.problemSlug, igApi);
+  return jsonResponse({ rows }, 200, corsHeaders);
+}
+
+/**
+ * POST /admin/beta-videos
+ * 관리자가 해시태그 검색 결과에서 선택한 항목을 등록합니다.
+ */
+export async function handleAdminAddVideoFromHashTag(
+  request: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  const authError = await requireAdminAuth(request, corsHeaders);
+  if (authError) return authError;
+
+  const body = await request.json() as {
+    problemSlug?: string;
+    videoUrl?: string;
+    thumbnailUrl?: string | null;
+  };
+
+  if (!body.problemSlug || !body.videoUrl) {
+    return jsonResponse({ error: 'Missing required fields' }, 400, corsHeaders);
+  }
+
+  if (!env.INSTAGRAM_APP_ID || !env.INSTAGRAM_APP_SECRET) {
+    return jsonResponse({ error: 'Instagram app credentials not configured' }, 500, corsHeaders);
+  }
+
+  try {
+    const igApi = new IgApiFacebookLogin(env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET);
+    const result = await addVideoFromHashTag(env.DB, body as any, igApi);
+    return jsonResponse({ success: true, id: result.id }, 201, corsHeaders);
+  } catch (err: any) {
+    if (err?.message === 'duplicate') {
+      return jsonResponse({ error: 'Video already submitted for this problem' }, 409, corsHeaders);
+    }
+    console.error('[betaVideos] addFromHashTag error:', err);
+    return jsonResponse({ error: 'Failed to add beta video' }, 500, corsHeaders);
+  }
+}
+
+/**
+ * DELETE /admin/beta-videos/:id
+ * 베타 비디오를 소프트 삭제합니다.
+ */
+export async function handleAdminDeleteBetaVideo(
+  request: Request,
+  env: Env,
+  corsHeaders: Record<string, string>,
+  id: string
+): Promise<Response> {
+  const authError = await requireAdminAuth(request, corsHeaders);
+  if (authError) return authError;
+
+  const videoId = parseInt(id, 10);
+  if (isNaN(videoId)) return jsonResponse({ error: 'Invalid video ID' }, 400, corsHeaders);
+
+  try {
+    await deleteVideo(env.DB, videoId);
+    return jsonResponse({ success: true }, 200, corsHeaders);
+  } catch (err: any) {
+    if (err?.message === 'not_found') return jsonResponse({ error: 'Video not found' }, 404, corsHeaders);
+    if (err?.message === 'already_deleted') return jsonResponse({ error: 'Video already deleted' }, 409, corsHeaders);
+    console.error('[betaVideos] delete error:', err);
+    return jsonResponse({ error: 'Failed to delete beta video' }, 500, corsHeaders);
   }
 }
