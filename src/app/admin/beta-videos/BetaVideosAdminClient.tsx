@@ -541,7 +541,8 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
                 {igStatus.connected ? (
                   <>
                     <p className={styles.igStatusText}>
-                      {igStatus.username ? `@${igStatus.username}` : `계정 ID: ${igStatus.userId}`}
+                      {igStatus.username && `@${igStatus.username} `}
+                      (ID: {igStatus.userId})
                       &nbsp;|&nbsp;
                       만료: {igStatus.expiresAt
                         ? new Date(igStatus.expiresAt).toLocaleDateString('ko-KR')
