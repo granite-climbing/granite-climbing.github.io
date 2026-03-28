@@ -41,7 +41,10 @@ export async function handleGetInstagramAuthUrl(
   const authError = await requireAdminAuth(request, corsHeaders);
   if (authError) return authError;
 
+  console.log('[auth-url] generating Instagram OAuth URL');
+
   if (!env.INSTAGRAM_APP_ID || !env.INSTAGRAM_APP_SECRET) {
+    console.error('[auth-url] INSTAGRAM_APP_ID or INSTAGRAM_APP_SECRET not configured');
     return jsonResponse({ error: 'Instagram app credentials not configured' }, 500, corsHeaders);
   }
 
@@ -74,6 +77,7 @@ export async function handleGetInstagramAuthUrl(
   });
 
   const url = `https://www.facebook.com/dialog/oauth?${params}`;
+  console.log('[auth-url] OAuth URL generated, redirect_uri:', redirectUri);
   return jsonResponse({ url }, 200, corsHeaders);
 }
 
@@ -94,12 +98,16 @@ export async function handleInstagramCallback(
   const adminUrl = env.ALLOWED_ORIGIN || 'https://granite.kr';
   const successRedirect = `${adminUrl}/admin/beta-videos/?instagram=connected`;
 
+  console.log('[callback] received — error=%s code=%s state=%s', error ?? 'none', code ? 'present' : 'missing', state ? 'present' : 'missing');
+
   // User denied the OAuth request
   if (error) {
+    console.warn('[callback] user denied OAuth:', error);
     return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=denied`, 302);
   }
 
   if (!code || !state) {
+    console.warn('[callback] missing code or state');
     return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=missing_params`, 302);
   }
 
@@ -116,6 +124,7 @@ export async function handleInstagramCallback(
     .run();
 
   if (!storedState) {
+    console.warn('[callback] invalid or expired CSRF state');
     return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=invalid_state`, 302);
   }
 
@@ -179,21 +188,26 @@ export async function handleInstagramCallback(
           }
         } else {
           // Fallback: use Facebook user ID
+          console.warn('[callback] no instagram_business_account found — falling back to Facebook user ID');
           const meRes = await fetch(
             `https://graph.facebook.com/v21.0/me?fields=id&access_token=${tokenData.access_token}`
           );
           const meData = (await meRes.json()) as { id: string };
           userId = meData.id;
+          console.log('[callback] fallback userId:', userId);
         }
       } else {
         // Fallback: use Facebook user ID
+        console.warn('[callback] /me/accounts request failed — falling back to Facebook user ID');
         const meRes = await fetch(
           `https://graph.facebook.com/v21.0/me?fields=id&access_token=${tokenData.access_token}`
         );
         const meData = (await meRes.json()) as { id: string };
         userId = meData.id;
+        console.log('[callback] fallback userId:', userId);
       }
-    } catch {
+    } catch (err) {
+      console.error('[callback] user_id_fetch error:', err);
       return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=user_id_fetch`, 302);
     }
 
@@ -241,6 +255,7 @@ export async function handleInstagramCallback(
       .bind(longTokenData.access_token, userId, igUsername, 'long_lived', expiresAt, now, now)
       .run();
 
+    console.log('[callback] token saved — userId=%s username=%s expiresAt=%s', userId, igUsername ?? 'null', expiresAt);
     return Response.redirect(successRedirect, 302);
   } catch (err) {
     console.error('OAuth callback error:', err);
@@ -265,11 +280,14 @@ export async function handleGetInstagramStatus(
   ).first()) as TokenRow | null;
 
   if (!row) {
+    console.log('[status] no token stored — not connected');
     return jsonResponse({ connected: false }, 200, corsHeaders);
   }
 
   const expiresMs = new Date(row.expires_at).getTime();
   const daysUntilExpiry = Math.floor((expiresMs - Date.now()) / (1000 * 60 * 60 * 24));
+
+  console.log('[status] connected — userId=%s username=%s daysUntilExpiry=%d', row.user_id, row.username ?? 'null', daysUntilExpiry);
 
   return jsonResponse(
     {
@@ -298,11 +316,14 @@ export async function handleRefreshInstagramToken(
   const authError = await requireAdminAuth(request, corsHeaders);
   if (authError) return authError;
 
+  console.log('[refresh] token refresh requested');
+
   const row = (await env.DB.prepare(
     'SELECT access_token FROM instagram_tokens LIMIT 1'
   ).first()) as { access_token: string } | null;
 
   if (!row) {
+    console.warn('[refresh] no token stored');
     return jsonResponse({ error: 'No Instagram token found' }, 404, corsHeaders);
   }
 
@@ -336,6 +357,7 @@ export async function handleRefreshInstagramToken(
       .bind(data.access_token, expiresAt, now)
       .run();
 
+    console.log('[refresh] token refreshed — expiresAt=%s', expiresAt);
     return jsonResponse({ success: true, expiresAt }, 200, corsHeaders);
   } catch (err) {
     console.error('Refresh error:', err);
@@ -356,6 +378,7 @@ export async function handleDeleteInstagramToken(
   if (authError) return authError;
 
   await env.DB.prepare('DELETE FROM instagram_tokens').run();
+  console.log('[disconnect] Instagram token deleted');
   return jsonResponse({ success: true }, 200, corsHeaders);
 }
 
@@ -391,13 +414,15 @@ export async function handleAdminHashtagSearch(
   try {
     // Strip leading # if present
     const cleanTag = hashtag.replace(/^#/, '');
+    console.log('[hashtag] searching tag=%s after=%s userId=%s', cleanTag, after ?? 'none', row.user_id);
     const appToken = env.INSTAGRAM_APP_ID && env.INSTAGRAM_APP_SECRET
       ? `${env.INSTAGRAM_APP_ID}|${env.INSTAGRAM_APP_SECRET}`
       : undefined;
     const result = await searchHashtagMedia(cleanTag, row.access_token, row.user_id, after, appToken);
+    console.log('[hashtag] result count=%d nextCursor=%s', result.items.length, result.nextCursor ?? 'none');
     return jsonResponse({ data: result.items, nextCursor: result.nextCursor }, 200, corsHeaders);
   } catch (err) {
-    console.error('Admin hashtag search error:', err);
+    console.error('[hashtag] search error:', err);
     return jsonResponse({ error: 'Failed to fetch Instagram data' }, 502, corsHeaders);
   }
 }
