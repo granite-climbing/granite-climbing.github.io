@@ -24,6 +24,7 @@ interface Env {
 interface TokenRow {
   access_token: string;
   user_id: string;
+  username: string | null;
   expires_at: string;
   updated_at: string;
 }
@@ -146,8 +147,9 @@ export async function handleInstagramCallback(
       expires_in?: number;
     };
 
-    // Step 2: Get Instagram Business Account ID via /me/accounts
+    // Step 2: Get Instagram Business Account ID and username via /me/accounts
     let userId: string;
+    let igUsername: string | null = null;
     try {
       const accountsRes = await fetch(
         `https://graph.facebook.com/v21.0/me/accounts` +
@@ -162,6 +164,19 @@ export async function handleInstagramCallback(
         const igId = accountsData.data?.[0]?.instagram_business_account?.id;
         if (igId) {
           userId = igId;
+          // Fetch Instagram username via the IG Business Account node
+          try {
+            const igUserRes = await fetch(
+              `https://graph.facebook.com/v21.0/${igId}?fields=username&access_token=${tokenData.access_token}`
+            );
+            if (igUserRes.ok) {
+              const igUserData = (await igUserRes.json()) as { id: string; username?: string };
+              igUsername = igUserData.username ?? null;
+              console.log('[oauth] ig username:', igUsername);
+            }
+          } catch {
+            // username is optional — proceed without it
+          }
         } else {
           // Fallback: use Facebook user ID
           const meRes = await fetch(
@@ -221,9 +236,9 @@ export async function handleInstagramCallback(
     // Upsert: delete existing token, insert new one
     await env.DB.prepare('DELETE FROM instagram_tokens').run();
     await env.DB.prepare(
-      'INSERT INTO instagram_tokens (access_token, user_id, token_type, expires_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO instagram_tokens (access_token, user_id, username, token_type, expires_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
     )
-      .bind(longTokenData.access_token, userId, 'long_lived', expiresAt, now, now)
+      .bind(longTokenData.access_token, userId, igUsername, 'long_lived', expiresAt, now, now)
       .run();
 
     return Response.redirect(successRedirect, 302);
@@ -246,7 +261,7 @@ export async function handleGetInstagramStatus(
   if (authError) return authError;
 
   const row = (await env.DB.prepare(
-    'SELECT access_token, user_id, expires_at, updated_at FROM instagram_tokens LIMIT 1'
+    'SELECT access_token, user_id, username, expires_at, updated_at FROM instagram_tokens LIMIT 1'
   ).first()) as TokenRow | null;
 
   if (!row) {
@@ -260,6 +275,7 @@ export async function handleGetInstagramStatus(
     {
       connected: true,
       userId: row.user_id,
+      username: row.username ?? null,
       expiresAt: row.expires_at,
       updatedAt: row.updated_at,
       daysUntilExpiry,

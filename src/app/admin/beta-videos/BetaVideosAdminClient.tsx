@@ -33,6 +33,7 @@ interface InstagramPost {
 interface IgStatus {
   connected: boolean;
   userId?: string;
+  username?: string;
   expiresAt?: string;
   updatedAt?: string;
   daysUntilExpiry?: number;
@@ -540,7 +541,7 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
                 {igStatus.connected ? (
                   <>
                     <p className={styles.igStatusText}>
-                      계정 ID: {igStatus.userId}
+                      {igStatus.username ? `@${igStatus.username}` : `계정 ID: ${igStatus.userId}`}
                       &nbsp;|&nbsp;
                       만료: {igStatus.expiresAt
                         ? new Date(igStatus.expiresAt).toLocaleDateString('ko-KR')
