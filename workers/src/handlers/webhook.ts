@@ -172,11 +172,12 @@ async function processMention(
   env: Env
 ): Promise<void> {
   // Fetch mention details via Mentioned Media API (Facebook Login)
-  // > https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/mentions
+  // Correct format: GET /{ig-user-id}?fields=mentioned_media.media_id({media-id}){fields}
+  // > https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/mentioned_media#reading
+  const fields = 'caption,media_type,media_url,thumbnail_url,timestamp,username';
   const mentionRes = await fetch(
-    `https://graph.facebook.com/v21.0/${userId}/mentioned_media` +
-      `?media_id=${mediaId}` +
-      `&fields=caption,permalink,media_url,thumbnail_url,media_type` +
+    `https://graph.facebook.com/v21.0/${userId}` +
+      `?fields=mentioned_media.media_id(${mediaId}){${fields}}` +
       `&access_token=${accessToken}`
   );
 
@@ -186,23 +187,36 @@ async function processMention(
     return;
   }
 
-  const mentionData = (await mentionRes.json()) as {
-    caption?: string;
-    permalink?: string;
-    media_url?: string;
-    thumbnail_url?: string;
-    media_type?: string;
+  const mentionRes2 = (await mentionRes.json()) as {
+    mentioned_media?: {
+      caption?: string;
+      media_url?: string;
+      thumbnail_url?: string;
+      media_type?: string;
+      timestamp?: string;
+      username?: string;
+      id?: string;
+    };
+    id: string;
   };
+
+  console.log('[webhook] mentioned_media response:', JSON.stringify(mentionRes2));
+
+  const mentionData = mentionRes2.mentioned_media ?? {};
 
   console.log('[webhook] mentioned_media:', JSON.stringify({
     ...mentionData,
     caption: mentionData.caption?.slice(0, 100),
   }));
 
-  const { caption, permalink, media_url, thumbnail_url: mentionThumb } = mentionData;
+  const { caption, media_url, thumbnail_url: mentionThumb, username: mentionUsername, id: mentionMediaId } = mentionData;
+
+  // Construct permalink from media ID (format: instagram.com/p/{media-id}/)
+  // mentioned_media response does not include permalink field
+  const permalink = mentionMediaId ? `https://www.instagram.com/p/${mentionMediaId}/` : null;
 
   if (!permalink) {
-    console.warn('[webhook] no permalink in mentioned_media response');
+    console.warn('[webhook] no media id in mentioned_media response');
     return;
   }
 
@@ -240,24 +254,19 @@ async function processMention(
     return;
   }
 
-  // Enrich with oEmbed (username, thumbnail_url)
-  let instagramUsername: string | null = null;
-  let thumbnailUrl: string | null = mentionThumb ?? null;
+  // username is available directly from mentioned_media response
+  // Enrich with oEmbed for thumbnail_url if not already available
+  let instagramUsername: string | null = mentionUsername ?? null;
+  let thumbnailUrl: string | null = mentionThumb ?? media_url ?? null;
 
   const oembedInfo = await fetchOembedInfo(permalink, appToken).catch(() => null);
   if (oembedInfo) {
-    instagramUsername = oembedInfo.author_name ?? null;
+    if (!instagramUsername) instagramUsername = oembedInfo.author_name ?? null;
     if (oembedInfo.thumbnail_url) thumbnailUrl = oembedInfo.thumbnail_url;
   }
 
-  // Fall back to media_url for thumbnail if still missing
-  if (!thumbnailUrl) {
-    thumbnailUrl = media_url ?? null;
-  }
-
-  // Extract post ID from permalink (instagram.com/p/<id>/)
-  const postIdMatch = permalink.match(/\/p\/([^/]+)/);
-  const postId = postIdMatch ? postIdMatch[1] : null;
+  // Extract post ID from media ID
+  const postId = mentionMediaId ?? null;
 
   const now = new Date().toISOString();
 
