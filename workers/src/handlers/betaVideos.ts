@@ -6,9 +6,12 @@
 
 import { jsonResponse } from '../utils/response';
 import { detectPlatform, extractPostId } from '../utils/validation';
+import { fetchOembedInfo } from '../utils/instagramApi';
 
 interface Env {
   DB: D1Database;
+  INSTAGRAM_APP_ID?: string;
+  INSTAGRAM_APP_SECRET?: string;
 }
 
 /**
@@ -98,10 +101,22 @@ export async function handleSubmitBetaVideo(
       }
     }
 
-    // Use provided thumbnail if available, otherwise skip (Instagram OG scraping doesn't work without login)
-    const thumbnailUrl = body.thumbnailUrl || null;
-    const instagramUsername = body.instagramUsername || null;
+    // Use provided thumbnail if available
+    let thumbnailUrl = body.thumbnailUrl || null;
+    let instagramUsername = body.instagramUsername || null;
     const instagramTimestamp = body.instagramTimestamp || null;
+
+    // Auto-enrich Instagram posts via oEmbed if username not already provided
+    if (platform === 'instagram' && !instagramUsername && env.INSTAGRAM_APP_ID && env.INSTAGRAM_APP_SECRET) {
+      const appToken = `${env.INSTAGRAM_APP_ID}|${env.INSTAGRAM_APP_SECRET}`;
+      const oembedInfo = await fetchOembedInfo(videoUrl, appToken).catch(() => null);
+      if (oembedInfo) {
+        instagramUsername = oembedInfo.author_name ?? null;
+        if (!thumbnailUrl && oembedInfo.thumbnail_url) {
+          thumbnailUrl = oembedInfo.thumbnail_url;
+        }
+      }
+    }
 
     const result = await env.DB.prepare(
       'INSERT INTO beta_videos (problem_slug, video_url, post_id, platform, thumbnail_url, submitted_at, status, instagram_username, instagram_timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'

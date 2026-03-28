@@ -24,9 +24,40 @@ export interface HashtagMediaResult {
   nextCursor: string | null;
 }
 
+interface OembedInfo {
+  author_name?: string;
+  thumbnail_url?: string;
+}
+
 /**
- * Enrich media items with Instagram username via oEmbed API.
- * oEmbed accepts a post permalink and returns author_name (= username).
+ * Fetch oEmbed info for a single Instagram post permalink.
+ * Returns author_name (username) and thumbnail_url.
+ * Uses App access token ({APP_ID}|{APP_SECRET}) — no user token needed.
+ * > https://developers.facebook.com/docs/instagram-platform/oembed
+ */
+export async function fetchOembedInfo(
+  permalink: string,
+  appToken: string
+): Promise<OembedInfo | null> {
+  const res = await fetch(
+    `${INSTAGRAM_API}/instagram_oembed` +
+      `?url=${encodeURIComponent(permalink)}` +
+      `&fields=author_name,thumbnail_url` +
+      `&access_token=${appToken}`
+  );
+  const text = await res.text();
+  if (!res.ok) {
+    console.warn(`[oembed] failed for ${permalink}: ${res.status} ${text}`);
+    return null;
+  }
+  const json = JSON.parse(text) as OembedInfo;
+  console.log(`[oembed] ${permalink}: author_name=${json.author_name ?? 'null'} thumbnail=${json.thumbnail_url ? 'yes' : 'no'}`);
+  return json;
+}
+
+/**
+ * Enrich media items with Instagram username and thumbnail via oEmbed API.
+ * oEmbed accepts a post permalink and returns author_name (= username) and thumbnail_url.
  * Uses App access token ({APP_ID}|{APP_SECRET}) — no user token needed.
  */
 async function enrichWithOembed(
@@ -35,31 +66,20 @@ async function enrichWithOembed(
 ): Promise<InstagramMediaItem[]> {
   console.log(`[oembed] enriching ${items.length} items`);
   const results = await Promise.allSettled(
-    items.map((item) =>
-      fetch(
-        `${INSTAGRAM_API}/instagram_oembed` +
-          `?url=${encodeURIComponent(item.permalink)}` +
-          `&fields=author_name` +
-          `&access_token=${appToken}`
-      ).then(async (r) => {
-        const text = await r.text();
-        if (!r.ok) {
-          console.warn(`[oembed] failed for ${item.permalink}: ${r.status} ${text}`);
-          return null;
-        }
-        const json = JSON.parse(text) as { author_name?: string };
-        console.log(`[oembed] ${item.permalink}: author_name=${json.author_name ?? 'null'}`);
-        return json;
-      })
-    )
+    items.map((item) => fetchOembedInfo(item.permalink, appToken))
   );
 
   let successCount = 0;
   const enriched: InstagramMediaItem[] = items.map((item, i) => {
     const result = results[i];
-    if (result.status === 'fulfilled' && result.value?.author_name) {
-      successCount++;
-      return { ...item, username: result.value.author_name };
+    if (result.status === 'fulfilled' && result.value) {
+      const info = result.value;
+      if (info.author_name) successCount++;
+      return {
+        ...item,
+        username: info.author_name,
+        thumbnail_url: info.thumbnail_url ?? item.thumbnail_url,
+      };
     }
     if (result.status === 'rejected') {
       console.error(`[oembed] rejected for ${item.permalink}:`, result.reason);
