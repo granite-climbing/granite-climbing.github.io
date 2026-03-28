@@ -415,10 +415,7 @@ export async function handleAdminHashtagSearch(
     // Strip leading # if present
     const cleanTag = hashtag.replace(/^#/, '');
     console.log('[hashtag] searching tag=%s after=%s userId=%s', cleanTag, after ?? 'none', row.user_id);
-    const appToken = env.INSTAGRAM_APP_ID && env.INSTAGRAM_APP_SECRET
-      ? `${env.INSTAGRAM_APP_ID}|${env.INSTAGRAM_APP_SECRET}`
-      : undefined;
-    const result = await searchHashtagMedia(cleanTag, row.access_token, row.user_id, after, appToken);
+    const result = await searchHashtagMedia(cleanTag, row.access_token, row.user_id, after);
     console.log('[hashtag] result count=%d nextCursor=%s', result.items.length, result.nextCursor ?? 'none');
     return jsonResponse({ data: result.items, nextCursor: result.nextCursor }, 200, corsHeaders);
   } catch (err) {

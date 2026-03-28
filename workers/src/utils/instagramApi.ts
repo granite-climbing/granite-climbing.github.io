@@ -55,50 +55,17 @@ export async function fetchOembedInfo(
   return json;
 }
 
-/**
- * Enrich media items with Instagram username and thumbnail via oEmbed API.
- * oEmbed accepts a post permalink and returns author_name (= username) and thumbnail_url.
- * Uses App access token ({APP_ID}|{APP_SECRET}) — no user token needed.
- */
-async function enrichWithOembed(
-  items: Omit<InstagramMediaItem, 'username'>[],
-  appToken: string
-): Promise<InstagramMediaItem[]> {
-  console.log(`[oembed] enriching ${items.length} items`);
-  const results = await Promise.allSettled(
-    items.map((item) => fetchOembedInfo(item.permalink, appToken))
-  );
-
-  let successCount = 0;
-  const enriched: InstagramMediaItem[] = items.map((item, i) => {
-    const result = results[i];
-    if (result.status === 'fulfilled' && result.value) {
-      const info = result.value;
-      if (info.author_name) successCount++;
-      return {
-        ...item,
-        username: info.author_name,
-        thumbnail_url: info.thumbnail_url ?? item.thumbnail_url,
-      };
-    }
-    if (result.status === 'rejected') {
-      console.error(`[oembed] rejected for ${item.permalink}:`, result.reason);
-    }
-    return item;
-  });
-  console.log(`[oembed] username resolved: ${successCount}/${items.length}`);
-  return enriched;
-}
 
 /**
- * Search recent media for a hashtag using the Instagram Graph API
+ * Search recent media for a hashtag using the Instagram Graph API.
+ * Returns raw results without oEmbed enrichment — username/thumbnail
+ * are fetched via oEmbed only at registration time (POST /beta-videos).
  */
 export async function searchHashtagMedia(
   tag: string,
   accessToken: string,
   userId: string,
-  after?: string,
-  appToken?: string
+  after?: string
 ): Promise<HashtagMediaResult> {
   const hashtagId = await getHashtagId(tag, accessToken, userId);
   if (!hashtagId) return { items: [], nextCursor: null };
@@ -132,7 +99,7 @@ export async function searchHashtagMedia(
   };
   console.log('[hashtag] top_media count:', data.data?.length ?? 0);
 
-  const baseItems = (data.data ?? [])
+  const items: InstagramMediaItem[] = (data.data ?? [])
     .filter((item) => item.permalink)
     .map((item) => ({
       id: item.id,
@@ -141,14 +108,6 @@ export async function searchHashtagMedia(
       permalink: item.permalink!,
       media_type: item.media_type || 'IMAGE',
     }));
-
-  // Fetch username via oEmbed API using each item's permalink.
-  // oEmbed accepts the post URL and returns author_name (= Instagram username).
-  // Uses an App access token ({APP_ID}|{APP_SECRET}) — no user token needed.
-  // timestamp is not available via oEmbed; remains undefined.
-  const items: InstagramMediaItem[] = appToken
-    ? await enrichWithOembed(baseItems, appToken)
-    : baseItems;
 
   const nextCursor = data.paging?.next ? (data.paging.cursors?.after ?? null) : null;
 
