@@ -73,11 +73,18 @@ const API_VERSION = 'v21.0';
 
 export class IgApiFacebookLogin {
   private readonly base: string;
+  private readonly appId: string;
+  private readonly appSecret: string;
+  /** App access token — oEmbed 등 유저 토큰 불필요 API에 사용 */
+  private readonly appToken: string;
   /** 해시태그 ID 인메모리 캐시 (Worker 인스턴스 생존 기간 동안 유지) */
   private readonly hashtagCache = new Map<string, { id: string; ts: number }>();
   private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24시간
 
-  constructor(base = `${API_BASE}/${API_VERSION}`) {
+  constructor(appId: string, appSecret: string, base = `${API_BASE}/${API_VERSION}`) {
+    this.appId = appId;
+    this.appSecret = appSecret;
+    this.appToken = `${appId}|${appSecret}`;
     this.base = base;
   }
 
@@ -88,18 +95,17 @@ export class IgApiFacebookLogin {
   /**
    * Instagram 게시물의 oEmbed 정보를 가져옵니다.
    * author_name(username)과 thumbnail_url 을 반환합니다.
-   * App access token({APP_ID}|{APP_SECRET}) 을 사용하므로 유저 토큰이 필요 없습니다.
+   * App access token({APP_ID}|{APP_SECRET}) 을 내부적으로 사용합니다.
    *
    * @param permalink - 인스타그램 게시물 URL (예: https://www.instagram.com/p/xxx/)
-   * @param appToken  - App access token ({APP_ID}|{APP_SECRET})
    * @see https://developers.facebook.com/docs/instagram-platform/oembed
    */
-  async fetchOembed(permalink: string, appToken: string): Promise<OembedInfo | null> {
+  async fetchOembed(permalink: string): Promise<OembedInfo | null> {
     const res = await fetch(
       `${this.base}/instagram_oembed` +
         `?url=${encodeURIComponent(permalink)}` +
         `&fields=author_name,thumbnail_url` +
-        `&access_token=${appToken}`
+        `&access_token=${this.appToken}`
     );
     const text = await res.text();
     if (!res.ok) {
@@ -217,22 +223,15 @@ export class IgApiFacebookLogin {
   /**
    * OAuth 인가 코드를 단기(1시간) 유저 액세스 토큰으로 교환합니다.
    *
-   * @param code         - OAuth 콜백으로 받은 인가 코드
-   * @param redirectUri  - OAuth 요청 시 사용한 redirect_uri (정확히 일치해야 함)
-   * @param clientId     - Meta App ID
-   * @param clientSecret - Meta App Secret
+   * @param code        - OAuth 콜백으로 받은 인가 코드
+   * @param redirectUri - OAuth 요청 시 사용한 redirect_uri (정확히 일치해야 함)
    * @see https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/business-login-for-instagram
    */
-  async exchangeCodeForToken(
-    code: string,
-    redirectUri: string,
-    clientId: string,
-    clientSecret: string
-  ): Promise<ShortLivedToken | null> {
+  async exchangeCodeForToken(code: string, redirectUri: string): Promise<ShortLivedToken | null> {
     const res = await fetch(
       `${this.base}/oauth/access_token` +
-        `?client_id=${clientId}` +
-        `&client_secret=${clientSecret}` +
+        `?client_id=${this.appId}` +
+        `&client_secret=${this.appSecret}` +
         `&redirect_uri=${encodeURIComponent(redirectUri)}` +
         `&code=${code}`
     );
@@ -251,21 +250,15 @@ export class IgApiFacebookLogin {
    * Facebook Login 방식에서는 fb_exchange_token grant 를 사용합니다.
    * (Instagram Login 방식의 ig_exchange_token 과 다릅니다)
    *
-   * @param shortToken   - 단기 유저 액세스 토큰
-   * @param clientId     - Meta App ID
-   * @param clientSecret - Meta App Secret
+   * @param shortToken - 단기 유저 액세스 토큰
    * @see https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/business-login-for-instagram
    */
-  async exchangeForLongLivedToken(
-    shortToken: string,
-    clientId: string,
-    clientSecret: string
-  ): Promise<LongLivedToken | null> {
+  async exchangeForLongLivedToken(shortToken: string): Promise<LongLivedToken | null> {
     const res = await fetch(
       `${this.base}/oauth/access_token` +
         `?grant_type=fb_exchange_token` +
-        `&client_id=${clientId}` +
-        `&client_secret=${clientSecret}` +
+        `&client_id=${this.appId}` +
+        `&client_secret=${this.appSecret}` +
         `&fb_exchange_token=${shortToken}`
     );
     if (!res.ok) {
@@ -282,21 +275,15 @@ export class IgApiFacebookLogin {
    * 만료 전 장기 토큰을 갱신하여 60일을 연장합니다.
    * 토큰이 최소 24시간 이상 된 경우에만 갱신 가능하며, 만료된 토큰은 갱신할 수 없습니다.
    *
-   * @param token        - 갱신할 장기 유저 액세스 토큰
-   * @param clientId     - Meta App ID
-   * @param clientSecret - Meta App Secret
+   * @param token - 갱신할 장기 유저 액세스 토큰
    * @see https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/business-login-for-instagram
    */
-  async refreshLongLivedToken(
-    token: string,
-    clientId: string,
-    clientSecret: string
-  ): Promise<LongLivedToken | null> {
+  async refreshLongLivedToken(token: string): Promise<LongLivedToken | null> {
     const res = await fetch(
       `${this.base}/oauth/access_token` +
         `?grant_type=fb_exchange_token` +
-        `&client_id=${clientId}` +
-        `&client_secret=${clientSecret}` +
+        `&client_id=${this.appId}` +
+        `&client_secret=${this.appSecret}` +
         `&fb_exchange_token=${token}`
     );
     if (!res.ok) {
@@ -356,8 +343,8 @@ export class IgApiFacebookLogin {
    * Facebook 페이지를 Webhook 에 구독합니다.
    * Facebook Login 방식에서 Instagram mention 이벤트를 받으려면 Page 구독이 필요합니다.
    *
-   * @param pageId            - Facebook 페이지 ID
-   * @param pageAccessToken   - Page access token
+   * @param pageId          - Facebook 페이지 ID
+   * @param pageAccessToken - Page access token
    * @see https://developers.facebook.com/docs/graph-api/webhooks/getting-started/webhooks-for-instagram
    */
   async subscribePageToWebhook(pageId: string, pageAccessToken: string): Promise<boolean> {
@@ -441,6 +428,3 @@ export class IgApiFacebookLogin {
     return data.mentioned_comment ?? null;
   }
 }
-
-/** 싱글톤 인스턴스 — Worker 전역에서 공유 */
-export const igApi = new IgApiFacebookLogin();
