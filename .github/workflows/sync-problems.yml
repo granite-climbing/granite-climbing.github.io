@@ -1,0 +1,29 @@
+name: Sync Problems to D1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'content/problems/**'
+  workflow_dispatch:
+
+jobs:
+  sync-problems:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install worker dependencies
+        run: npm install
+        working-directory: workers
+
+      - name: Sync problems to D1
+        run: node scripts/sync-problems.mjs --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
