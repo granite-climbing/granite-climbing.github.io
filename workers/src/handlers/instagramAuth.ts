@@ -71,7 +71,7 @@ export async function handleGetInstagramAuthUrl(
   const params = new URLSearchParams({
     client_id: env.INSTAGRAM_APP_ID,
     redirect_uri: redirectUri,
-    scope: 'instagram_basic',
+    scope: 'instagram_basic,pages_show_list,pages_manage_metadata',
     response_type: 'code',
     state,
   });
