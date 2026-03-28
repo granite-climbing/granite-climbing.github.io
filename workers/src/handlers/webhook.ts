@@ -180,7 +180,7 @@ async function processMention(
   let mentionThumb: string | undefined;
   let mentionUsername: string | undefined;
   let mentionMediaId: string | undefined = mediaId;
-  const mediaFields = 'caption,media_type,media_url,thumbnail_url,timestamp,username'
+  const mediaFields = 'caption,media_type,media_url,thumbnail_url,timestamp,username,permallink'
 
   if (commentId) {
     // Fetch via mentioned_comment API when comment_id is present
