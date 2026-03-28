@@ -148,7 +148,7 @@ export async function handleWebhookEvent(request: Request, env: Env): Promise<Re
       const mediaId = change.value?.media_id;
       if (!mediaId) continue;
 
-      await processMention(mediaId, tokenRow.access_token, appToken, env).catch(
+      await processMention(mediaId, tokenRow.user_id, tokenRow.access_token, appToken, env).catch(
         (err) => console.error('[webhook] processMention error:', err)
       );
     }
@@ -166,21 +166,23 @@ export async function handleWebhookEvent(request: Request, env: Env): Promise<Re
  */
 async function processMention(
   mediaId: string,
+  userId: string,
   accessToken: string,
   appToken: string,
   env: Env
 ): Promise<void> {
-  // Fetch mention details via Instagram Media node (Facebook Login)
-  // /{media-id}?fields=... is the correct path for Facebook Login access tokens
+  // Fetch mention details via Mentioned Media API (Facebook Login)
+  // > https://developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/mentions
   const mentionRes = await fetch(
-    `https://graph.facebook.com/v21.0/${mediaId}` +
-      `?fields=caption,permalink,media_url,thumbnail_url,media_type` +
+    `https://graph.facebook.com/v21.0/${userId}/mentioned_media` +
+      `?media_id=${mediaId}` +
+      `&fields=caption,permalink,media_url,thumbnail_url,media_type` +
       `&access_token=${accessToken}`
   );
 
   if (!mentionRes.ok) {
     const errText = await mentionRes.text();
-    console.error('[webhook] media fetch failed:', mentionRes.status, errText);
+    console.error('[webhook] mentioned_media fetch failed:', mentionRes.status, errText);
     return;
   }
 
@@ -197,7 +199,7 @@ async function processMention(
     caption: mentionData.caption?.slice(0, 100),
   }));
 
-  const { caption, permalink, media_url, thumbnail_url: mentionThumb, media_type } = mentionData;
+  const { caption, permalink, media_url, thumbnail_url: mentionThumb } = mentionData;
 
   if (!permalink) {
     console.warn('[webhook] no permalink in mentioned_media response');
