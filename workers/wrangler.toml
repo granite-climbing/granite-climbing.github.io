@@ -1,6 +1,7 @@
 name = "granite"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
+account_id = "bb50bcaf0b5bfe1c288a45ab215bacb4"  # Cloudflare dashboard → Workers & Pages → Overview → Account ID
 
 # D1 database binding
 # NOTE: Replace database_id with actual ID from: wrangler d1 create granite
