@@ -1,38 +1,40 @@
 /**
- * Instagram OAuth Handlers
- * Manages Instagram Business Account OAuth flow and token storage
+ * Instagram OAuth 핸들러
  *
- * Flow:
- * 1. Admin calls GET /admin/instagram/auth-url → gets Instagram OAuth URL
- * 2. Admin browser navigates to Instagram OAuth
- * 3. Instagram redirects to GET /instagram/callback?code=...&state=...
- * 4. Worker exchanges code for long-lived token, stores in D1
- * 5. Worker redirects admin back to /admin/beta-videos/?instagram=connected
+ * 요청 파싱 + 서비스 호출 + HTTP 응답 반환만 담당합니다.
+ * 비즈니스 로직은 instagramAuthService 에 있습니다.
+ *
+ * OAuth 플로우:
+ * 1. GET  /admin/instagram/auth-url  → OAuth URL 반환
+ * 2. GET  /instagram/callback        → 코드 교환, 토큰 저장
+ * 3. GET  /admin/instagram/status    → 토큰 상태 조회
+ * 4. POST /admin/instagram/refresh   → 토큰 갱신
+ * 5. DELETE /admin/instagram/token   → 연결 해제
  */
 
 import { jsonResponse } from '../utils/response';
 import { requireAdminAuth } from '../utils/auth';
-import { searchHashtagMedia } from '../utils/instagramApi';
-import { igApi } from '../utils/IgApiFacebookLogin';
+import { IgApiFacebookLogin } from '../utils/IgApiFacebookLogin';
+import {
+  generateOAuthState,
+  buildOAuthUrl,
+  validateOAuthState,
+  completeOAuthCallback,
+  getTokenStatus,
+  refreshToken,
+  deleteToken,
+} from '../services/instagramAuthService';
 
 interface Env {
+  DB: D1Database;
   INSTAGRAM_APP_ID: string;
   INSTAGRAM_APP_SECRET: string;
   ALLOWED_ORIGIN: string;
-  DB: D1Database;
-}
-
-interface TokenRow {
-  access_token: string;
-  user_id: string;
-  username: string | null;
-  expires_at: string;
-  updated_at: string;
 }
 
 /**
  * GET /admin/instagram/auth-url
- * Returns the Instagram OAuth authorization URL with a CSRF state token
+ * Instagram OAuth 인증 URL을 반환합니다.
  */
 export async function handleGetInstagramAuthUrl(
   request: Request,
@@ -42,50 +44,21 @@ export async function handleGetInstagramAuthUrl(
   const authError = await requireAdminAuth(request, corsHeaders);
   if (authError) return authError;
 
-  console.log('[auth-url] generating Instagram OAuth URL');
-
   if (!env.INSTAGRAM_APP_ID || !env.INSTAGRAM_APP_SECRET) {
-    console.error('[auth-url] INSTAGRAM_APP_ID or INSTAGRAM_APP_SECRET not configured');
     return jsonResponse({ error: 'Instagram app credentials not configured' }, 500, corsHeaders);
   }
 
-  // Clean up expired state tokens (older than 10 minutes)
-  await env.DB.prepare(
-    "DELETE FROM instagram_oauth_state WHERE created_at < datetime('now', '-10 minutes')"
-  ).run();
+  const state = await generateOAuthState(env.DB);
+  const redirectUri = `${new URL(request.url).origin}/instagram/callback`;
+  const url = buildOAuthUrl(state, env.INSTAGRAM_APP_ID, redirectUri);
 
-  // Generate cryptographically random CSRF state
-  const stateBytes = crypto.getRandomValues(new Uint8Array(32));
-  const state = Array.from(stateBytes)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-
-  await env.DB.prepare(
-    'INSERT INTO instagram_oauth_state (state, created_at) VALUES (?, ?)'
-  )
-    .bind(state, new Date().toISOString())
-    .run();
-
-  const workerOrigin = new URL(request.url).origin;
-  const redirectUri = `${workerOrigin}/instagram/callback`;
-
-  const params = new URLSearchParams({
-    client_id: env.INSTAGRAM_APP_ID,
-    redirect_uri: redirectUri,
-    scope: 'instagram_basic,pages_show_list,pages_manage_metadata',
-    response_type: 'code',
-    state,
-  });
-
-  const url = `https://www.facebook.com/dialog/oauth?${params}`;
-  console.log('[auth-url] OAuth URL generated, redirect_uri:', redirectUri);
+  console.log('[instagramAuth] OAuth URL generated');
   return jsonResponse({ url }, 200, corsHeaders);
 }
 
 /**
  * GET /instagram/callback
- * Handles the OAuth callback from Instagram (no admin auth - public endpoint)
- * Validates CSRF state, exchanges code for long-lived token, stores in D1
+ * OAuth 콜백을 처리합니다 (인증 없는 공개 엔드포인트).
  */
 export async function handleInstagramCallback(
   request: Request,
@@ -99,128 +72,29 @@ export async function handleInstagramCallback(
   const adminUrl = env.ALLOWED_ORIGIN || 'https://granite.kr';
   const successRedirect = `${adminUrl}/admin/beta-videos/?instagram=connected`;
 
-  console.log('[callback] received — error=%s code=%s state=%s', error ?? 'none', code ? 'present' : 'missing', state ? 'present' : 'missing');
+  console.log('[instagramAuth] callback — error=%s code=%s state=%s', error ?? 'none', code ? 'present' : 'missing', state ? 'present' : 'missing');
 
-  // User denied the OAuth request
-  if (error) {
-    console.warn('[callback] user denied OAuth:', error);
-    return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=denied`, 302);
-  }
+  if (error) return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=denied`, 302);
+  if (!code || !state) return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=missing_params`, 302);
 
-  if (!code || !state) {
-    console.warn('[callback] missing code or state');
-    return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=missing_params`, 302);
-  }
-
-  // Validate CSRF state
-  const storedState = await env.DB.prepare(
-    'SELECT state FROM instagram_oauth_state WHERE state = ?'
-  )
-    .bind(state)
-    .first();
-
-  // Always delete state after lookup (one-time use)
-  await env.DB.prepare('DELETE FROM instagram_oauth_state WHERE state = ?')
-    .bind(state)
-    .run();
-
-  if (!storedState) {
-    console.warn('[callback] invalid or expired CSRF state');
-    return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=invalid_state`, 302);
-  }
+  const valid = await validateOAuthState(env.DB, state);
+  if (!valid) return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=invalid_state`, 302);
 
   try {
-    const workerOrigin = new URL(request.url).origin;
-    const redirectUri = `${workerOrigin}/instagram/callback`;
-
-    // Step 1: Exchange code for short-lived token via Graph API (GET)
-    const tokenData = await igApi.exchangeCodeForToken(code, redirectUri, env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET);
-
-    if (!tokenData) {
-      return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=token_exchange`, 302);
-    }
-
-    console.log('[oauth] step1 token response: access_token=***');
-
-    // Step 2: Get Instagram Business Account ID, username, and Page ID via /me/accounts
-    let userId: string;
-    let pageId: string | null = null;
-    let pageAccessToken: string | null = null;
-    let igUsername: string | null = null;
-    try {
-      const accountsData = await igApi.getAccounts(tokenData.access_token);
-      const page = accountsData?.data?.[0];
-      const igId = page?.instagram_business_account?.id;
-      if (igId) {
-        userId = igId;
-        pageId = page!.id;
-        pageAccessToken = page!.access_token;
-        const igUserInfo = await igApi.getIgUserInfo(igId, tokenData.access_token).catch(() => null);
-        igUsername = igUserInfo?.username ?? null;
-      } else {
-        // Fallback: use Facebook user ID
-        console.warn('[callback] no instagram_business_account found — falling back to Facebook user ID');
-        const meRes = await fetch(
-          `https://graph.facebook.com/v21.0/me?fields=id&access_token=${tokenData.access_token}`
-        );
-        const meData = (await meRes.json()) as { id: string };
-        userId = meData.id;
-        console.log('[callback] fallback userId:', userId);
-      }
-    } catch (err) {
-      console.error('[callback] user_id_fetch error:', err);
-      return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=user_id_fetch`, 302);
-    }
-
-    // Step 3: Exchange short-lived token for long-lived user access token (60 days)
-    // Facebook Login uses fb_exchange_token (not ig_exchange_token which is Basic Display only)
-    const longTokenData = await igApi.exchangeForLongLivedToken(tokenData.access_token, env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET);
-
-    if (!longTokenData) {
-      return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=long_token_exchange`, 302);
-    }
-
-    const now = new Date().toISOString();
-    let expiresAt: string;
-    if (longTokenData.expires_in) {
-      expiresAt = new Date(Date.now() + longTokenData.expires_in * 1000).toISOString();
-    } else if (longTokenData.expires_at) {
-      expiresAt = new Date(longTokenData.expires_at * 1000).toISOString();
-    } else {
-      expiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
-    }
-
-    // Upsert: delete existing token, insert new one
-    await env.DB.prepare('DELETE FROM instagram_tokens').run();
-    await env.DB.prepare(
-      'INSERT INTO instagram_tokens (access_token, user_id, username, token_type, expires_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    )
-      .bind(longTokenData.access_token, userId, igUsername, 'long_lived', expiresAt, now, now)
-      .run();
-
-    console.log('[callback] token saved — userId=%s username=%s expiresAt=%s', userId, igUsername ?? 'null', expiresAt);
-
-    // Step 5: Subscribe Page to webhook (Facebook Login — required for mentions webhook)
-    // https://developers.facebook.com/docs/graph-api/webhooks/getting-started/webhooks-for-instagram
-    if (pageId && pageAccessToken) {
-      await igApi.subscribePageToWebhook(pageId, pageAccessToken).catch((err) => {
-        // Non-fatal: webhook subscription failure should not block the OAuth flow
-        console.error('[callback] page webhook subscription failed:', err);
-      });
-    } else {
-      console.warn('[callback] skipping page webhook subscription — pageId or pageAccessToken missing');
-    }
-
+    const igApi = new IgApiFacebookLogin(env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET);
+    const redirectUri = `${new URL(request.url).origin}/instagram/callback`;
+    await completeOAuthCallback(code, redirectUri, igApi, env.DB);
     return Response.redirect(successRedirect, 302);
-  } catch (err) {
-    console.error('OAuth callback error:', err);
-    return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=server_error`, 302);
+  } catch (err: any) {
+    const reason = err?.message ?? 'server_error';
+    console.error('[instagramAuth] callback error:', err);
+    return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=${reason}`, 302);
   }
 }
 
 /**
  * GET /admin/instagram/status
- * Returns the current Instagram token status
+ * 연결된 Instagram 토큰 상태를 반환합니다.
  */
 export async function handleGetInstagramStatus(
   request: Request,
@@ -230,38 +104,17 @@ export async function handleGetInstagramStatus(
   const authError = await requireAdminAuth(request, corsHeaders);
   if (authError) return authError;
 
-  const row = (await env.DB.prepare(
-    'SELECT access_token, user_id, username, expires_at, updated_at FROM instagram_tokens LIMIT 1'
-  ).first()) as TokenRow | null;
+  const status = await getTokenStatus(env.DB);
 
-  if (!row) {
-    console.log('[status] no token stored — not connected');
-    return jsonResponse({ connected: false }, 200, corsHeaders);
-  }
+  if (!status) return jsonResponse({ connected: false }, 200, corsHeaders);
 
-  const expiresMs = new Date(row.expires_at).getTime();
-  const daysUntilExpiry = Math.floor((expiresMs - Date.now()) / (1000 * 60 * 60 * 24));
-
-  console.log('[status] connected — userId=%s username=%s daysUntilExpiry=%d', row.user_id, row.username ?? 'null', daysUntilExpiry);
-
-  return jsonResponse(
-    {
-      connected: true,
-      userId: row.user_id,
-      username: row.username ?? null,
-      expiresAt: row.expires_at,
-      updatedAt: row.updated_at,
-      daysUntilExpiry,
-      needsRefresh: daysUntilExpiry < 7,
-    },
-    200,
-    corsHeaders
-  );
+  console.log('[instagramAuth] status — userId=%s daysUntilExpiry=%d', status.userId, status.daysUntilExpiry);
+  return jsonResponse({ connected: true, ...status }, 200, corsHeaders);
 }
 
 /**
  * POST /admin/instagram/refresh
- * Refreshes the long-lived token (resets 60-day expiry)
+ * 장기 토큰을 갱신합니다 (60일 연장).
  */
 export async function handleRefreshInstagramToken(
   request: Request,
@@ -271,47 +124,20 @@ export async function handleRefreshInstagramToken(
   const authError = await requireAdminAuth(request, corsHeaders);
   if (authError) return authError;
 
-  console.log('[refresh] token refresh requested');
-
-  const row = (await env.DB.prepare(
-    'SELECT access_token FROM instagram_tokens LIMIT 1'
-  ).first()) as { access_token: string } | null;
-
-  if (!row) {
-    console.warn('[refresh] no token stored');
-    return jsonResponse({ error: 'No Instagram token found' }, 404, corsHeaders);
-  }
-
   try {
-    // Facebook Login long-lived tokens are refreshed via fb_exchange_token
-    const data = await igApi.refreshLongLivedToken(row.access_token, env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET);
-
-    if (!data) {
-      return jsonResponse({ error: 'Failed to refresh token' }, 502, corsHeaders);
-    }
-
-    const now = new Date().toISOString();
-    const expiresAt = data.expires_in
-      ? new Date(Date.now() + data.expires_in * 1000).toISOString()
-      : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
-
-    await env.DB.prepare(
-      'UPDATE instagram_tokens SET access_token = ?, expires_at = ?, updated_at = ?'
-    )
-      .bind(data.access_token, expiresAt, now)
-      .run();
-
-    console.log('[refresh] token refreshed — expiresAt=%s', expiresAt);
-    return jsonResponse({ success: true, expiresAt }, 200, corsHeaders);
-  } catch (err) {
-    console.error('Refresh error:', err);
+    const igApi = new IgApiFacebookLogin(env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET);
+    const result = await refreshToken(env.DB, igApi);
+    return jsonResponse({ success: true, ...result }, 200, corsHeaders);
+  } catch (err: any) {
+    if (err?.message === 'no_token') return jsonResponse({ error: 'No Instagram token found' }, 404, corsHeaders);
+    console.error('[instagramAuth] refresh error:', err);
     return jsonResponse({ error: 'Failed to refresh token' }, 500, corsHeaders);
   }
 }
 
 /**
  * DELETE /admin/instagram/token
- * Disconnects Instagram by removing the stored token
+ * Instagram 연결을 해제합니다.
  */
 export async function handleDeleteInstagramToken(
   request: Request,
@@ -321,49 +147,6 @@ export async function handleDeleteInstagramToken(
   const authError = await requireAdminAuth(request, corsHeaders);
   if (authError) return authError;
 
-  await env.DB.prepare('DELETE FROM instagram_tokens').run();
-  console.log('[disconnect] Instagram token deleted');
+  await deleteToken(env.DB);
   return jsonResponse({ success: true }, 200, corsHeaders);
-}
-
-/**
- * GET /admin/instagram/hashtag?hashtag=<tag>
- * Admin hashtag search using the DB-stored token
- */
-export async function handleAdminHashtagSearch(
-  request: Request,
-  env: Env,
-  corsHeaders: Record<string, string>
-): Promise<Response> {
-  const authError = await requireAdminAuth(request, corsHeaders);
-  if (authError) return authError;
-
-  const url = new URL(request.url);
-  const hashtag = url.searchParams.get('hashtag');
-
-  if (!hashtag) {
-    return jsonResponse({ error: 'Missing ?hashtag= parameter' }, 400, corsHeaders);
-  }
-
-  const row = (await env.DB.prepare(
-    'SELECT access_token, user_id FROM instagram_tokens LIMIT 1'
-  ).first()) as { access_token: string; user_id: string } | null;
-
-  if (!row) {
-    return jsonResponse({ error: 'Instagram not connected' }, 400, corsHeaders);
-  }
-
-  const after = url.searchParams.get('after') || undefined;
-
-  try {
-    // Strip leading # if present
-    const cleanTag = hashtag.replace(/^#/, '');
-    console.log('[hashtag] searching tag=%s after=%s userId=%s', cleanTag, after ?? 'none', row.user_id);
-    const result = await searchHashtagMedia(cleanTag, row.access_token, row.user_id, after);
-    console.log('[hashtag] result count=%d nextCursor=%s', result.items.length, result.nextCursor ?? 'none');
-    return jsonResponse({ data: result.items, nextCursor: result.nextCursor }, 200, corsHeaders);
-  } catch (err) {
-    console.error('[hashtag] search error:', err);
-    return jsonResponse({ error: 'Failed to fetch Instagram data' }, 502, corsHeaders);
-  }
 }
