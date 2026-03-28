@@ -156,23 +156,28 @@ export async function handleInstagramCallback(
       expires_in?: number;
     };
 
-    // Step 2: Get Instagram Business Account ID and username via /me/accounts
+    // Step 2: Get Instagram Business Account ID, username, and Page ID via /me/accounts
     let userId: string;
+    let pageId: string | null = null;
+    let pageAccessToken: string | null = null;
     let igUsername: string | null = null;
     try {
       const accountsRes = await fetch(
         `https://graph.facebook.com/v21.0/me/accounts` +
-          `?fields=instagram_business_account` +
+          `?fields=id,access_token,instagram_business_account` +
           `&access_token=${tokenData.access_token}`
       );
       if (accountsRes.ok) {
         const accountsData = (await accountsRes.json()) as {
-          data: { instagram_business_account?: { id: string } }[];
+          data: { id: string; access_token: string; instagram_business_account?: { id: string } }[];
         };
         console.log('[oauth] step2 accounts response:', JSON.stringify(accountsData));
-        const igId = accountsData.data?.[0]?.instagram_business_account?.id;
+        const page = accountsData.data?.[0];
+        const igId = page?.instagram_business_account?.id;
         if (igId) {
           userId = igId;
+          pageId = page.id;
+          pageAccessToken = page.access_token;
           // Fetch Instagram username via the IG Business Account node
           try {
             const igUserRes = await fetch(
@@ -256,6 +261,32 @@ export async function handleInstagramCallback(
       .run();
 
     console.log('[callback] token saved — userId=%s username=%s expiresAt=%s', userId, igUsername ?? 'null', expiresAt);
+
+    // Step 5: Subscribe Page to webhook (Facebook Login — required for mentions webhook)
+    // https://developers.facebook.com/docs/graph-api/webhooks/getting-started/webhooks-for-instagram
+    if (pageId && pageAccessToken) {
+      try {
+        const subscribeRes = await fetch(
+          `https://graph.facebook.com/v21.0/${pageId}/subscribed_apps`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              access_token: pageAccessToken,
+              subscribed_fields: 'feed,mention',
+            }).toString(),
+          }
+        );
+        const subscribeData = await subscribeRes.json();
+        console.log('[callback] page webhook subscription — pageId=%s result=%s', pageId, JSON.stringify(subscribeData));
+      } catch (err) {
+        // Non-fatal: webhook subscription failure should not block the OAuth flow
+        console.error('[callback] page webhook subscription failed:', err);
+      }
+    } else {
+      console.warn('[callback] skipping page webhook subscription — pageId or pageAccessToken missing');
+    }
+
     return Response.redirect(successRedirect, 302);
   } catch (err) {
     console.error('OAuth callback error:', err);
