@@ -69,7 +69,10 @@ export function handleWebhookVerification(request: Request, env: Env): Response 
  */
 async function verifySignature(request: Request, body: string, appSecret: string): Promise<boolean> {
   const signature = request.headers.get('X-Hub-Signature-256');
-  if (!signature) return false;
+  if (!signature) {
+    console.warn('[webhook] X-Hub-Signature-256 header missing');
+    return false;
+  }
 
   const expected = signature.replace('sha256=', '');
   const key = await crypto.subtle.importKey(
@@ -84,6 +87,7 @@ async function verifySignature(request: Request, body: string, appSecret: string
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
 
+  console.log('[webhook] signature check — expected=%s computed=%s match=%s', expected, computed, computed === expected);
   return computed === expected;
 }
 
