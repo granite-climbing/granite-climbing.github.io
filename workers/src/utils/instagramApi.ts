@@ -70,18 +70,22 @@ export async function searchHashtagMedia(
   const hashtagId = await getHashtagId(tag, accessToken, userId);
   if (!hashtagId) return { items: [], nextCursor: null };
 
-  // Hashtag API supports limited fields: id, media_url, thumbnail_url, permalink, media_type
-  // These must be requested inline — individual media IDs from hashtag API cannot be queried directly
+  // Available fields per API docs:
+  // https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-hashtag/top-media
+  // Note: thumbnail_url is NOT a supported field for this endpoint
+  // Note: media_url is not returned for CAROUSEL_ALBUM type
   let mediaUrl =
     `${INSTAGRAM_API}/${hashtagId}/top_media` +
     `?user_id=${userId}` +
-    `&fields=id,media_url,permalink,media_type` +
-    `&limit=30` +
+    `&fields=id,media_type,media_url,permalink,timestamp,comments_count,like_count` +
+    `&limit=50` +
     `&access_token=${accessToken}`;
   if (after) mediaUrl += `&after=${encodeURIComponent(after)}`;
 
   const res = await fetch(mediaUrl);
   const rawText = await res.text();
+  console.log('[hashtag] top_media raw:', rawText);
+
   if (!res.ok) {
     console.error('[hashtag] top_media failed:', res.status, rawText);
     return { items: [], nextCursor: null };
@@ -90,10 +94,12 @@ export async function searchHashtagMedia(
   const data = JSON.parse(rawText) as {
     data?: {
       id: string;
-      media_url?: string;
-      thumbnail_url?: string;
-      permalink?: string;
       media_type?: string;
+      media_url?: string;
+      permalink?: string;
+      timestamp?: string;
+      comments_count?: number;
+      like_count?: number;
     }[];
     paging?: { cursors?: { after?: string }; next?: string };
   };
@@ -103,10 +109,10 @@ export async function searchHashtagMedia(
     .filter((item) => item.permalink)
     .map((item) => ({
       id: item.id,
-      media_url: item.media_url || item.thumbnail_url || '',
-      thumbnail_url: item.thumbnail_url,
+      media_url: item.media_url || '',
       permalink: item.permalink!,
       media_type: item.media_type || 'IMAGE',
+      timestamp: item.timestamp,
     }));
 
   const nextCursor = data.paging?.next ? (data.paging.cursors?.after ?? null) : null;
