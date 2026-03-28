@@ -12,6 +12,7 @@
  *   INSTAGRAM_APP_ID      - Facebook App ID (client_id)
  *   INSTAGRAM_APP_SECRET  - Facebook App Secret (client_secret)
  *   ALLOWED_ORIGIN        - Frontend origin for OAuth callback redirect
+ *   WEBHOOK_VERIFY_TOKEN  - Arbitrary secret used for Instagram webhook subscription verification
  *
  * D1 Database bindings:
  *   DB                    - Beta videos + Instagram tokens database
@@ -29,11 +30,13 @@ import {
   handleDeleteInstagramToken,
   handleAdminHashtagSearch,
 } from './handlers/instagramAuth';
+import { handleWebhookVerification, handleWebhookEvent } from './handlers/webhook';
 
 interface Env {
   INSTAGRAM_APP_ID: string;
   INSTAGRAM_APP_SECRET: string;
   ALLOWED_ORIGIN: string;
+  WEBHOOK_VERIFY_TOKEN: string;
   DB: D1Database;
 }
 
@@ -91,6 +94,17 @@ export default {
     if (url.pathname === '/instagram/callback') {
       if (request.method === 'GET') {
         return handleInstagramCallback(request, env);
+      } else {
+        return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+      }
+    }
+
+    // Route: Instagram Webhook (public, no admin auth — verified via signature/verify_token)
+    if (url.pathname === '/instagram/webhook') {
+      if (request.method === 'GET') {
+        return handleWebhookVerification(request, env);
+      } else if (request.method === 'POST') {
+        return handleWebhookEvent(request, env);
       } else {
         return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
       }
