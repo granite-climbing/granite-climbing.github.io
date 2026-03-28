@@ -180,13 +180,14 @@ async function processMention(
   let mentionThumb: string | undefined;
   let mentionUsername: string | undefined;
   let mentionMediaId: string | undefined = mediaId;
+  const mediaFields = 'caption,media_type,media_url,thumbnail_url,timestamp,username'
 
   if (commentId) {
     // Fetch via mentioned_comment API when comment_id is present
     // > https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/mentioned_comment#reading
     const commentRes = await fetch(
       `https://graph.facebook.com/v21.0/${userId}` +
-        `?fields=mentioned_comment.comment_id(${commentId}){text,timestamp,media}` +
+        `?fields=mentioned_comment.comment_id(${commentId}){text,timestamp,media{${mediaFields}}}` +
         `&access_token=${accessToken}`
     );
     if (!commentRes.ok) {
@@ -204,7 +205,7 @@ async function processMention(
   } else {
     // Fetch via mentioned_media API when only media_id is present
     // > https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/mentioned_media#reading
-    const mediaFields = 'caption,media_type,media_url,thumbnail_url,timestamp,username';
+    ;
     const mediaRes = await fetch(
       `https://graph.facebook.com/v21.0/${userId}` +
         `?fields=mentioned_media.media_id(${mediaId}){${mediaFields}}` +
