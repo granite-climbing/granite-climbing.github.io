@@ -10,6 +10,7 @@
  */
 
 import { IgApiFacebookLogin } from '../utils/IgApiFacebookLogin';
+import { getVideoMetaFromHTML } from '../utils/htmlScraper';
 import { detectPlatform, extractPostId } from '../utils/validation';
 
 // ─────────────────────────────────────────────
@@ -182,11 +183,12 @@ export async function addVideoFromURL(
   let thumbnailUrl = input.thumbnailUrl ?? null;
   let instagramUsername = input.instagramUsername ?? null;
 
-  if (platform === 'instagram' && !instagramUsername) {
-    const oembedInfo = await igApi.fetchOembed(videoUrl).catch(() => null);
-    if (oembedInfo) {
-      instagramUsername = oembedInfo.author_name ?? null;
-      if (!thumbnailUrl && oembedInfo.thumbnail_url) thumbnailUrl = oembedInfo.thumbnail_url;
+  if (platform === 'instagram') {
+    const meta = await igApi.getVideoMetaFromOembed(videoUrl).catch(() => null)
+      ?? await getVideoMetaFromHTML(videoUrl);
+    if (meta) {
+      if (!instagramUsername) instagramUsername = meta.author_name ?? null;
+      if (!thumbnailUrl) thumbnailUrl = meta.thumbnail_url ?? null;
     }
   }
 
@@ -235,10 +237,11 @@ export async function addVideoFromHashTag(
   let instagramUsername: string | null = null;
 
   if (platform === 'instagram') {
-    const oembedInfo = await igApi.fetchOembed(videoUrl).catch(() => null);
-    if (oembedInfo) {
-      instagramUsername = oembedInfo.author_name ?? null;
-      if (!thumbnailUrl && oembedInfo.thumbnail_url) thumbnailUrl = oembedInfo.thumbnail_url;
+    const meta = await igApi.getVideoMetaFromOembed(videoUrl).catch(() => null)
+      ?? await getVideoMetaFromHTML(videoUrl);
+    if (meta) {
+      if (!instagramUsername) instagramUsername = meta.author_name ?? null;
+      if (!thumbnailUrl) thumbnailUrl = meta.thumbnail_url ?? null;
     }
   }
 
@@ -369,10 +372,11 @@ async function _registerFromCaption(
   let instagramUsername = ctx.username;
   let thumbnailUrl = ctx.thumbnailUrl;
 
-  const oembedInfo = await igApi.fetchOembed(ctx.permalink).catch(() => null);
-  if (oembedInfo) {
-    if (!instagramUsername) instagramUsername = oembedInfo.author_name ?? null;
-    if (oembedInfo.thumbnail_url) thumbnailUrl = oembedInfo.thumbnail_url;
+  const meta = await igApi.getVideoMetaFromOembed(ctx.permalink).catch(() => null)
+    ?? await getVideoMetaFromHTML(ctx.permalink);
+  if (meta) {
+    if (!instagramUsername) instagramUsername = meta.author_name ?? null;
+    if (!thumbnailUrl) thumbnailUrl = meta.thumbnail_url ?? null;
   }
 
   await db.prepare(
@@ -459,10 +463,11 @@ export async function dryAddVideoFromHashTag(
       let instagramUsername: string | null = null;
 
       if (platform === 'instagram') {
-        const oembedInfo = await igApi.fetchOembed(videoUrl).catch(() => null);
-        if (oembedInfo) {
-          instagramUsername = oembedInfo.author_name ?? null;
-          if (!thumbnailUrl && oembedInfo.thumbnail_url) thumbnailUrl = oembedInfo.thumbnail_url;
+        const meta = await igApi.getVideoMetaFromOembed(videoUrl).catch(() => null)
+          ?? await getVideoMetaFromHTML(videoUrl);
+        if (meta) {
+          if (!instagramUsername) instagramUsername = meta.author_name ?? null;
+          if (!thumbnailUrl) thumbnailUrl = meta.thumbnail_url ?? null;
         }
       }
 
