@@ -96,11 +96,13 @@ export class IgApiFacebookLogin {
    * Instagram 게시물의 oEmbed 정보를 가져옵니다.
    * author_name(username)과 thumbnail_url 을 반환합니다.
    * App access token({APP_ID}|{APP_SECRET}) 을 내부적으로 사용합니다.
+   * appId 또는 appSecret 이 없으면 즉시 null 을 반환합니다.
    *
    * @param permalink - 인스타그램 게시물 URL (예: https://www.instagram.com/p/xxx/)
    * @see https://developers.facebook.com/docs/instagram-platform/oembed
    */
-  async fetchOembed(permalink: string): Promise<OembedInfo | null> {
+  async getVideoMetaFromOembed(permalink: string): Promise<OembedInfo | null> {
+    if (!this.appId || !this.appSecret) return null;
     const res = await fetch(
       `${this.base}/instagram_oembed` +
         `?url=${encodeURIComponent(permalink)}` +
@@ -109,11 +111,11 @@ export class IgApiFacebookLogin {
     );
     const text = await res.text();
     if (!res.ok) {
-      console.warn(`[IgApiFacebookLogin] oEmbed 실패 — permalink=${permalink} status=${res.status} body=${text}`);
+      console.warn(`[IgApiFacebookLogin] getVideoMetaFromOembed 실패 — permalink=${permalink} status=${res.status} body=${text}`);
       return null;
     }
     const json = JSON.parse(text) as OembedInfo;
-    console.log(`[IgApiFacebookLogin] oEmbed 성공 — author_name=${json.author_name ?? 'null'} thumbnail=${json.thumbnail_url ? 'yes' : 'no'}`);
+    console.log(`[IgApiFacebookLogin] getVideoMetaFromOembed 성공 — author_name=${json.author_name ?? 'null'} thumbnail=${json.thumbnail_url ? 'yes' : 'no'}`);
     return json;
   }
 
