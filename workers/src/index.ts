@@ -22,7 +22,7 @@
 import { createCorsHeaders, jsonResponse } from './utils/response';
 import { handleHashtagSearch } from './handlers/instagramHashtag';
 import { handleAdminHashtagSearch } from './handlers/instagramHashtag';
-import { handleGetBetaVideos, handleSubmitBetaVideo, handleAdminGetBetaVideos, handleAdminDeleteBetaVideo, handleAdminDryRun, handleAdminAddVideoFromHashTag } from './handlers/betaVideos';
+import { handleGetBetaVideos, handleSubmitBetaVideo, handleAdminGetBetaVideos, handleAdminDeleteBetaVideo, handleAdminDryRun, handleAdminAddVideoFromHashTag, handleAdminRefreshVideoMeta } from './handlers/betaVideos';
 import {
   handleGetInstagramAuthUrl,
   handleInstagramCallback,
@@ -67,6 +67,13 @@ export default {
     if (url.pathname === '/admin/beta-videos') {
       if (request.method === 'GET') return handleAdminGetBetaVideos(request, env, corsHeaders);
       if (request.method === 'POST') return handleAdminAddVideoFromHashTag(request, env, corsHeaders);
+      return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+    }
+
+    // Admin beta video refresh meta (must come before /:id pattern)
+    const adminRefreshMatch = url.pathname.match(/^\/admin\/beta-videos\/(\d+)\/refresh$/);
+    if (adminRefreshMatch) {
+      if (request.method === 'PATCH') return handleAdminRefreshVideoMeta(request, env, corsHeaders, adminRefreshMatch[1]);
       return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
     }
 

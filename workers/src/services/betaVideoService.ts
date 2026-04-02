@@ -487,6 +487,45 @@ export async function dryAddVideoFromHashTag(
 }
 
 // ─────────────────────────────────────────────
+// 메타데이터 새로고침
+// ─────────────────────────────────────────────
+
+/**
+ * 베타 비디오의 author(instagram_username)와 thumbnail_url을 oEmbed/HTML로 다시 가져와 업데이트합니다.
+ *
+ * @throws 'not_found'
+ */
+export async function refreshVideoMeta(
+  db: D1Database,
+  id: number,
+  igApi: IgApiFacebookLogin
+): Promise<{ instagramUsername: string | null; thumbnailUrl: string | null }> {
+  const row = await db.prepare(
+    'SELECT id, video_url, platform FROM beta_videos WHERE id = ?'
+  ).bind(id).first() as { id: number; video_url: string; platform: string } | null;
+
+  if (!row) throw new Error('not_found');
+
+  let instagramUsername: string | null = null;
+  let thumbnailUrl: string | null = null;
+
+  if (row.platform === 'instagram') {
+    const meta = await igApi.getVideoMetaFromOembed(row.video_url).catch(() => null)
+      ?? await getVideoMetaFromHTML(row.video_url);
+    if (meta) {
+      instagramUsername = meta.author_name ?? null;
+      thumbnailUrl = meta.thumbnail_url ?? null;
+    }
+  }
+
+  await db.prepare(
+    'UPDATE beta_videos SET instagram_username = ?, thumbnail_url = ? WHERE id = ?'
+  ).bind(instagramUsername, thumbnailUrl, id).run();
+
+  return { instagramUsername, thumbnailUrl };
+}
+
+// ─────────────────────────────────────────────
 // 삭제
 // ─────────────────────────────────────────────
 

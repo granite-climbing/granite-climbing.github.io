@@ -15,6 +15,7 @@ import {
   adminListVideos,
   dryAddVideoFromHashTag,
   deleteVideo,
+  refreshVideoMeta,
 } from '../services/betaVideoService';
 
 interface Env {
@@ -191,6 +192,37 @@ export async function handleAdminAddVideoFromHashTag(
     }
     console.error('[betaVideos] addFromHashTag error:', err);
     return jsonResponse({ error: 'Failed to add beta video' }, 500, corsHeaders);
+  }
+}
+
+/**
+ * PATCH /admin/beta-videos/:id/refresh
+ * 베타 비디오의 author 및 thumbnail을 다시 가져와 업데이트합니다.
+ */
+export async function handleAdminRefreshVideoMeta(
+  request: Request,
+  env: Env,
+  corsHeaders: Record<string, string>,
+  id: string
+): Promise<Response> {
+  const authError = await requireAdminAuth(request, corsHeaders);
+  if (authError) return authError;
+
+  const videoId = parseInt(id, 10);
+  if (isNaN(videoId)) return jsonResponse({ error: 'Invalid video ID' }, 400, corsHeaders);
+
+  if (!env.INSTAGRAM_APP_ID || !env.INSTAGRAM_APP_SECRET) {
+    return jsonResponse({ error: 'Instagram app credentials not configured' }, 500, corsHeaders);
+  }
+
+  try {
+    const igApi = new IgApiFacebookLogin(env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET);
+    const result = await refreshVideoMeta(env.DB, videoId, igApi);
+    return jsonResponse({ success: true, ...result }, 200, corsHeaders);
+  } catch (err: any) {
+    if (err?.message === 'not_found') return jsonResponse({ error: 'Video not found' }, 404, corsHeaders);
+    console.error('[betaVideos] refresh error:', err);
+    return jsonResponse({ error: 'Failed to refresh video meta' }, 500, corsHeaders);
   }
 }
 

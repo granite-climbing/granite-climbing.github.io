@@ -261,6 +261,38 @@
   font-style: italic;
 }
 
+.authorCell {
+  white-space: nowrap;
+  font-size: 13px;
+}
+.authorName {
+  color: #1d4ed8;
+  font-weight: 500;
+}
+.authorEmpty {
+  color: #cbd5e1;
+}
+
+.actionCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.refreshBtn {
+  padding: 5px 8px;
+  background: none;
+  border: 1px solid #93c5fd;
+  color: #1d4ed8;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s;
+  line-height: 1;
+}
+.refreshBtn:hover:not(:disabled) { background: #eff6ff; }
+.refreshBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
 @media (max-width: 768px) {
   .main { padding: 16px; }
   .searchInput { width: 140px; }

@@ -14,6 +14,7 @@ interface BetaVideo {
   videoUrl: string;
   platform: Platform;
   thumbnailUrl: string | null;
+  instagramUsername: string | null;
   submittedAt: string;
   status: string;
   postId: string | null;
@@ -202,6 +203,46 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
       loadInstagramStatus(authToken);
     }
   }, [authToken, loadVideos, loadInstagramStatus, showDeleted]);
+
+  const [refreshingIds, setRefreshingIds] = useState<Set<number>>(new Set());
+
+  async function refreshVideoMeta(id: number) {
+    if (!authToken) return;
+    setRefreshingIds(prev => new Set(prev).add(id));
+    try {
+      const res = await fetch(`${WORKER_URL}/admin/beta-videos/${id}/refresh`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+
+      if (res.status === 401) {
+        setAuthToken(null);
+        setError('세션이 만료되었습니다. Decap CMS에서 다시 로그인해 주세요.');
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json();
+        alert(`메타데이터 갱신 실패: ${data.error || res.statusText}`);
+        return;
+      }
+
+      const data = await res.json();
+      setAllVideos(prev =>
+        prev.map(v => v.id === id
+          ? { ...v, instagramUsername: data.instagramUsername, thumbnailUrl: data.thumbnailUrl }
+          : v
+        )
+      );
+    } catch (e: unknown) {
+      alert(`갱신 오류: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setRefreshingIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
 
   async function deleteVideo(id: number) {
     const video = allVideos.find(v => v.id === id);
@@ -827,9 +868,10 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
                   <th className={styles.thumbnailCell}>썸네일</th>
                   <th>플랫폼</th>
                   <th>URL</th>
+                  <th>Author</th>
                   <th>문제 (Problem)</th>
                   <th>등록일</th>
-                  <th>삭제</th>
+                  <th>관리</th>
                 </tr>
               </thead>
               <tbody>
@@ -867,6 +909,12 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
                           {truncateUrl(v.videoUrl)}
                         </a>
                       </td>
+                      <td className={styles.authorCell}>
+                        {v.instagramUsername
+                          ? <span className={styles.authorName}>@{v.instagramUsername}</span>
+                          : <span className={styles.authorEmpty}>-</span>
+                        }
+                      </td>
                       <td>
                         {problem ? (
                           <a
@@ -884,13 +932,25 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
                       </td>
                       <td className={styles.dateCell}>{formatDate(v.submittedAt)}</td>
                       <td>
-                        {v.deletedAt ? (
-                          <span className={styles.deletedLabel}>삭제됨<br />{formatDate(v.deletedAt)}</span>
-                        ) : (
-                          <button className={styles.deleteBtn} onClick={() => deleteVideo(v.id)}>
-                            🗑 삭제
-                          </button>
-                        )}
+                        <div className={styles.actionCell}>
+                          {v.platform === 'instagram' && !v.deletedAt && (
+                            <button
+                              className={styles.refreshBtn}
+                              onClick={() => refreshVideoMeta(v.id)}
+                              disabled={refreshingIds.has(v.id)}
+                              title="author 및 썸네일 다시 불러오기"
+                            >
+                              {refreshingIds.has(v.id) ? '...' : '🔄'}
+                            </button>
+                          )}
+                          {v.deletedAt ? (
+                            <span className={styles.deletedLabel}>삭제됨<br />{formatDate(v.deletedAt)}</span>
+                          ) : (
+                            <button className={styles.deleteBtn} onClick={() => deleteVideo(v.id)}>
+                              🗑 삭제
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
