@@ -26,7 +26,13 @@ export async function getVideoMetaFromHTML(url: string): Promise<OembedInfo | nu
     const imageMatch =
       html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i) ??
       html.match(/<meta\s+content="([^"]+)"\s+property="og:image"/i);
-    const thumbnail_url = imageMatch?.[1] ?? undefined;
+    const thumbnail_url = imageMatch?.[1]
+      ?.replace(/&amp;/g, '&')
+      ?.replace(/&lt;/g, '<')
+      ?.replace(/&gt;/g, '>')
+      ?.replace(/&quot;/g, '"')
+      ?.replace(/&#39;/g, "'")
+      ?? undefined;
 
     // og:description → "username on 날짜: 캡션..." 에서 username 추출
     const descMatch =
