@@ -34,17 +34,14 @@ export async function getVideoMetaFromHTML(url: string): Promise<OembedInfo | nu
       ?.replace(/&#39;/g, "'")
       ?? undefined;
 
-    // og:description → username 추출
-    // 형식 1: "username on 날짜: 캡션..."  e.g. "170._.180 on May 12, 2023: ..."
-    // 형식 2: "N likes, N comments - username"  e.g. "73 likes, 34 comments - dana2thetop"
-    const descMatch =
-      html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i) ??
-      html.match(/<meta\s+content="([^"]+)"\s+property="og:description"/i);
-    const description = descMatch?.[1];
-    const author_name = description
-      ? (/^\d+ likes,.+ - (.+)$/.exec(description)?.[1]  // 형식 2
-          ?? description.split(' on ')[0])                // 형식 1
-          .trim()
+    // og:url → username 추출
+    // e.g. "https://www.instagram.com/dana2thetop/reel/DQoTJQrD2BU/" → "dana2thetop"
+    const urlMatch =
+      html.match(/<meta\s+property="og:url"\s+content="([^"]+)"/i) ??
+      html.match(/<meta\s+content="([^"]+)"\s+property="og:url"/i);
+    const ogUrl = urlMatch?.[1];
+    const author_name = ogUrl
+      ? new URL(ogUrl).pathname.split('/').filter(Boolean)[0]
       : undefined;
 
     if (!thumbnail_url && !author_name) return null;
