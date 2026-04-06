@@ -44,9 +44,14 @@ export async function getVideoMetaFromHTML(url: string): Promise<OembedInfo | nu
       ? new URL(ogUrl).pathname.split('/').filter(Boolean)[0]
       : undefined;
 
-    if (!thumbnail_url && !author_name) return null;
+    if (!thumbnail_url && !author_name) {
+      console.log('[htmlScraper] getVideoMetaFromHTML — no metadata found: url=%s', url);
+      return null;
+    }
+    console.log('[htmlScraper] getVideoMetaFromHTML — author_name=%s thumbnail=%s url=%s', author_name ?? 'null', thumbnail_url ? 'yes' : 'no', url);
     return { thumbnail_url, author_name };
-  } catch {
+  } catch (e) {
+    console.error('[htmlScraper] getVideoMetaFromHTML — error: url=%s err=%s', url, e instanceof Error ? e.message : String(e));
     return null;
   }
 }
