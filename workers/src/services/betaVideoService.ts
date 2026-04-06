@@ -532,7 +532,9 @@ export async function refreshVideoMeta(
       ?? await getVideoMetaFromHTML(row.video_url);
     if (meta) {
       instagramUsername = meta.author_name ?? instagramUsername;
-      if (!thumbnailUrl) thumbnailUrl = meta.thumbnail_url ?? null;
+      // 기존에 유효한 썸네일이 없을 때만 새 값으로 업데이트
+      const hasValidThumbnail = !!row.thumbnail_url?.trim();
+      if (!hasValidThumbnail) thumbnailUrl = meta.thumbnail_url ?? null;
     }
   }
 
