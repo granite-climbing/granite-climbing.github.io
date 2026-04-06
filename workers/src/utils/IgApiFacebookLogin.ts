@@ -467,7 +467,7 @@ export class IgApiFacebookLogin {
     const mediaFields = 'caption,media_type,media_url,thumbnail_url,timestamp,username,permalink';
     const res = await fetch(
       `${this.base}/${userId}` +
-        `?fields=mentioned_comment.comment_id(${commentId}){text,timestamp,media{${mediaFields}}}` +
+        `?fields=mentioned_comment.comment_id(${commentId}){id,text,timestamp,media{${mediaFields}}}` +
         `&access_token=${accessToken}`
     );
     if (!res.ok) {
