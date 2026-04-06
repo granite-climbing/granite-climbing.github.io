@@ -41,6 +41,14 @@ interface IgStatus {
   needsRefresh?: boolean;
 }
 
+interface PendingAccount {
+  id: string;
+  name: string;
+  access_token: string;
+  ig_id: string | null;
+  ig_username: string | null;
+}
+
 function getDecapToken(): string | null {
   try {
     const raw = localStorage.getItem('gotrue.user');
@@ -132,19 +140,44 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
     setAuthToken(token);
   }, []);
 
+  // Account selection state
+  const [pendingSession, setPendingSession] = useState<string | null>(null);
+  const [pendingAccounts, setPendingAccounts] = useState<PendingAccount[]>([]);
+  const [confirmingAccount, setConfirmingAccount] = useState(false);
+
   // Check for OAuth callback result in URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const igParam = params.get('instagram');
+
     if (igParam === 'connected') {
       setOauthMessage('✅ 인스타그램 연동이 완료되었습니다.');
+    } else if (igParam === 'select') {
+      const session = params.get('session');
+      if (session) {
+        setPendingSession(session);
+        // 계정 목록 로드
+        const token = getDecapToken();
+        if (token) {
+          fetch(`${WORKER_URL}/admin/instagram/pending-accounts?session=${session}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+            .then(r => r.json())
+            .then((data: { accounts?: PendingAccount[] }) => {
+              if (data.accounts) setPendingAccounts(data.accounts);
+            })
+            .catch(() => setOauthMessage('❌ 계정 목록을 불러오지 못했습니다.'));
+        }
+      }
     } else if (igParam === 'error') {
       const reason = params.get('reason') || 'unknown';
       setOauthMessage(`❌ 인스타그램 연동 실패 (${reason})`);
     }
+
     if (igParam) {
       const clean = new URL(window.location.href);
       clean.searchParams.delete('instagram');
+      clean.searchParams.delete('session');
       clean.searchParams.delete('reason');
       window.history.replaceState({}, '', clean.toString());
     }
@@ -272,6 +305,31 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
       );
     } catch (e: unknown) {
       alert(`삭제 오류: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  async function confirmAccount(pageId: string) {
+    if (!authToken || !pendingSession) return;
+    setConfirmingAccount(true);
+    try {
+      const res = await fetch(`${WORKER_URL}/admin/instagram/confirm-account`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ sessionId: pendingSession, pageId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setOauthMessage(`❌ 계정 연동 실패: ${data.error || res.statusText}`);
+        return;
+      }
+      setPendingSession(null);
+      setPendingAccounts([]);
+      setOauthMessage('✅ 인스타그램 연동이 완료되었습니다.');
+      await loadInstagramStatus(authToken);
+    } catch {
+      setOauthMessage('❌ 계정 연동 중 오류가 발생했습니다.');
+    } finally {
+      setConfirmingAccount(false);
     }
   }
 
@@ -547,6 +605,51 @@ export default function BetaVideosAdminClient({ problemMap }: Props) {
           <div className={`${styles.toastMsg} ${oauthMessage.startsWith('✅') ? styles.toastSuccess : styles.toastError}`}>
             {oauthMessage}
             <button className={styles.toastClose} onClick={() => setOauthMessage('')}>×</button>
+          </div>
+        )}
+
+        {/* Account Selection Modal */}
+        {pendingSession && pendingAccounts.length > 0 && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modalContent} style={{ maxWidth: '480px' }} onClick={e => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <div>
+                  <h2 className={styles.modalTitle}>인스타그램 계정 선택</h2>
+                  <p className={styles.modalSubtitle}>연동할 계정을 선택하세요.</p>
+                </div>
+              </div>
+              <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {pendingAccounts.map(account => (
+                  <button
+                    key={account.id}
+                    className={`${styles.accountSelectBtn} ${!account.ig_id ? styles.accountSelectBtnWarn : ''}`}
+                    onClick={() => confirmAccount(account.id)}
+                    disabled={confirmingAccount}
+                  >
+                    <span className={styles.accountSelectName}>
+                      {account.ig_username ? `@${account.ig_username}` : account.name}
+                    </span>
+                    {account.ig_username && (
+                      <span className={styles.accountSelectSub}>{account.name}</span>
+                    )}
+                    {!account.ig_id && (
+                      <span className={styles.accountSelectWarn}>
+                        ⚠️ Instagram Business 계정이 아닙니다. 해시태그 검색 등 대부분의 기능이 동작하지 않을 수 있습니다.
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className={styles.modalFooter}>
+                <button
+                  className={styles.modalCancelBtn}
+                  onClick={() => { setPendingSession(null); setPendingAccounts([]); }}
+                  disabled={confirmingAccount}
+                >
+                  취소
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

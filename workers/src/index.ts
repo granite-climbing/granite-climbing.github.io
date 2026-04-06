@@ -29,6 +29,8 @@ import {
   handleGetInstagramStatus,
   handleRefreshInstagramToken,
   handleDeleteInstagramToken,
+  handleGetPendingAccounts,
+  handleConfirmAccount,
 } from './handlers/instagramAuth';
 import { handleWebhookVerification, handleWebhookEvent } from './handlers/instagramWebhook';
 
@@ -107,6 +109,16 @@ export default {
 
     if (url.pathname === '/admin/instagram/token') {
       if (request.method === 'DELETE') return handleDeleteInstagramToken(request, env, corsHeaders);
+      return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+    }
+
+    if (url.pathname === '/admin/instagram/pending-accounts') {
+      if (request.method === 'GET') return handleGetPendingAccounts(request, env, corsHeaders);
+      return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
+    }
+
+    if (url.pathname === '/admin/instagram/confirm-account') {
+      if (request.method === 'POST') return handleConfirmAccount(request, env, corsHeaders);
       return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders);
     }
 

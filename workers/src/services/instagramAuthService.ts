@@ -73,51 +73,137 @@ export async function validateOAuthState(db: D1Database, state: string): Promise
   return !!stored;
 }
 
+export interface PendingAccount {
+  id: string;          // Facebook Page ID
+  name: string;        // Facebook Page 이름
+  access_token: string;
+  ig_id: string | null;       // Instagram Business Account ID
+  ig_username: string | null;
+}
+
 /**
- * OAuth 콜백을 완료합니다.
- * code → 단기 토큰 → 장기 토큰 교환, IG 계정 정보 조회, 토큰 저장, 페이지 Webhook 구독까지 처리합니다.
+ * OAuth 콜백 1단계: code → 단기 토큰 교환 + 계정 목록 조회 후 임시 저장.
+ * 계정이 1개면 바로 확정하고 null을 반환합니다.
+ * 계정이 여러 개면 session_id를 반환하여 프론트에서 선택하도록 합니다.
  */
-export async function completeOAuthCallback(
+export async function prepareOAuthAccounts(
   code: string,
   redirectUri: string,
   igApi: IgApiFacebookLogin,
   db: D1Database
-): Promise<void> {
+): Promise<{ sessionId: string; accounts: PendingAccount[] } | null> {
   // Step 1: code → 단기 토큰
   const shortToken = await igApi.exchangeCodeForToken(code, redirectUri);
   if (!shortToken) throw new Error('token_exchange');
 
-  // Step 2: /me/accounts → Page ID + Instagram Business Account ID
+  // Step 2: /me/accounts → 계정 목록
+  const accountsData = await igApi.getAccounts(shortToken.access_token);
+  const pages = accountsData?.data ?? [];
+
+  // 각 페이지의 IG 계정 정보 조회
+  const accounts: PendingAccount[] = await Promise.all(
+    pages.map(async (page: any) => {
+      const igId = page.instagram_business_account?.id ?? null;
+      let igUsername: string | null = null;
+      if (igId) {
+        const info = await igApi.getIgUserInfo(igId, shortToken.access_token).catch(() => null);
+        igUsername = info?.username ?? null;
+      }
+      return {
+        id: page.id,
+        name: page.name ?? page.id,
+        access_token: page.access_token,
+        ig_id: igId,
+        ig_username: igUsername,
+      };
+    })
+  );
+
+  // 계정이 1개면 즉시 확정
+  if (accounts.length <= 1) {
+    await _finalizeAccount(accounts[0] ?? null, shortToken.access_token, igApi, db);
+    return null;
+  }
+
+  // 계정이 여러 개면 임시 저장 후 session_id 반환
+  await db.prepare(
+    "DELETE FROM instagram_pending_accounts WHERE created_at < datetime('now', '-10 minutes')"
+  ).run();
+
+  const sessionBytes = crypto.getRandomValues(new Uint8Array(16));
+  const sessionId = Array.from(sessionBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  await db.prepare(
+    'INSERT INTO instagram_pending_accounts (session_id, accounts, short_token, created_at) VALUES (?, ?, ?, ?)'
+  ).bind(sessionId, JSON.stringify(accounts), shortToken.access_token, new Date().toISOString()).run();
+
+  return { sessionId, accounts };
+}
+
+/**
+ * OAuth 콜백 2단계: 선택된 계정으로 토큰을 확정 저장합니다.
+ *
+ * @throws 'session_not_found' | 'invalid_account'
+ */
+export async function confirmOAuthAccount(
+  sessionId: string,
+  pageId: string,
+  igApi: IgApiFacebookLogin,
+  db: D1Database
+): Promise<void> {
+  const row = await db.prepare(
+    'SELECT accounts, short_token FROM instagram_pending_accounts WHERE session_id = ?'
+  ).bind(sessionId).first() as { accounts: string; short_token: string } | null;
+
+  if (!row) throw new Error('session_not_found');
+
+  await db.prepare('DELETE FROM instagram_pending_accounts WHERE session_id = ?').bind(sessionId).run();
+
+  const accounts: PendingAccount[] = JSON.parse(row.accounts);
+  const selected = accounts.find(a => a.id === pageId);
+  if (!selected) throw new Error('invalid_account');
+
+  await _finalizeAccount(selected, row.short_token, igApi, db);
+}
+
+/**
+ * 선택된 계정으로 장기 토큰을 발급하고 DB에 저장합니다.
+ */
+async function _finalizeAccount(
+  account: PendingAccount | null,
+  shortAccessToken: string,
+  igApi: IgApiFacebookLogin,
+  db: D1Database
+): Promise<void> {
   let userId: string;
   let pageId: string | null = null;
   let pageAccessToken: string | null = null;
   let igUsername: string | null = null;
 
-  const accountsData = await igApi.getAccounts(shortToken.access_token);
-  const page = accountsData?.data?.[0];
-  const igId = page?.instagram_business_account?.id;
-
-  if (igId) {
-    userId = igId;
-    pageId = page!.id;
-    pageAccessToken = page!.access_token;
-    const igUserInfo = await igApi.getIgUserInfo(igId, shortToken.access_token).catch(() => null);
-    igUsername = igUserInfo?.username ?? null;
-  } else {
-    // Fallback: Facebook 유저 ID 사용
+  if (account?.ig_id) {
+    userId = account.ig_id;
+    pageId = account.id;
+    pageAccessToken = account.access_token;
+    igUsername = account.ig_username;
+  } else if (account) {
+    // Facebook Page이지만 IG 계정 없는 경우
     console.warn('[instagramAuthService] no instagram_business_account — falling back to Facebook user ID');
+    userId = account.id;
+    pageId = account.id;
+    pageAccessToken = account.access_token;
+  } else {
+    // 아예 페이지가 없는 경우
+    console.warn('[instagramAuthService] no pages found — falling back to Facebook user ID');
     const meRes = await fetch(
-      `https://graph.facebook.com/v21.0/me?fields=id&access_token=${shortToken.access_token}`
+      `https://graph.facebook.com/v21.0/me?fields=id&access_token=${shortAccessToken}`
     );
     const meData = (await meRes.json()) as { id: string };
     userId = meData.id;
   }
 
-  // Step 3: 단기 → 장기 토큰 (60일)
-  const longToken = await igApi.exchangeForLongLivedToken(shortToken.access_token);
+  const longToken = await igApi.exchangeForLongLivedToken(shortAccessToken);
   if (!longToken) throw new Error('long_token_exchange');
 
-  // Step 4: DB 저장 (기존 토큰 교체)
   const now = new Date().toISOString();
   const expiresAt = longToken.expires_in
     ? new Date(Date.now() + longToken.expires_in * 1000).toISOString()
@@ -132,7 +218,6 @@ export async function completeOAuthCallback(
 
   console.log('[instagramAuthService] token saved — userId=%s username=%s expiresAt=%s', userId, igUsername ?? 'null', expiresAt);
 
-  // Step 5: 페이지 Webhook 구독 (non-fatal)
   if (pageId && pageAccessToken) {
     await igApi.subscribePageToWebhook(pageId, pageAccessToken).catch((err) => {
       console.error('[instagramAuthService] page webhook subscription failed:', err);

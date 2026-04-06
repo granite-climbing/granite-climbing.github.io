@@ -19,7 +19,8 @@ import {
   generateOAuthState,
   buildOAuthUrl,
   validateOAuthState,
-  completeOAuthCallback,
+  prepareOAuthAccounts,
+  confirmOAuthAccount,
   getTokenStatus,
   refreshToken,
   deleteToken,
@@ -83,12 +84,74 @@ export async function handleInstagramCallback(
   try {
     const igApi = new IgApiFacebookLogin(env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET);
     const redirectUri = `${new URL(request.url).origin}/instagram/callback`;
-    await completeOAuthCallback(code, redirectUri, igApi, env.DB);
+    const pending = await prepareOAuthAccounts(code, redirectUri, igApi, env.DB);
+
+    if (pending) {
+      // 계정이 여러 개 — 선택 페이지로 리다이렉트
+      return Response.redirect(
+        `${adminUrl}/admin/beta-videos/?instagram=select&session=${pending.sessionId}`,
+        302
+      );
+    }
+
     return Response.redirect(successRedirect, 302);
   } catch (err: any) {
     const reason = err?.message ?? 'server_error';
     console.error('[instagramAuth] callback error:', err);
     return Response.redirect(`${adminUrl}/admin/beta-videos/?instagram=error&reason=${reason}`, 302);
+  }
+}
+
+/**
+ * GET /admin/instagram/pending-accounts?session=<sessionId>
+ * 계정 선택 대기 중인 계정 목록을 반환합니다.
+ */
+export async function handleGetPendingAccounts(
+  request: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  const authError = await requireAdminAuth(request, corsHeaders);
+  if (authError) return authError;
+
+  const sessionId = new URL(request.url).searchParams.get('session');
+  if (!sessionId) return jsonResponse({ error: 'Missing session parameter' }, 400, corsHeaders);
+
+  const row = await (env.DB as D1Database).prepare(
+    'SELECT accounts FROM instagram_pending_accounts WHERE session_id = ?'
+  ).bind(sessionId).first() as { accounts: string } | null;
+
+  if (!row) return jsonResponse({ error: 'Session not found or expired' }, 404, corsHeaders);
+
+  return jsonResponse({ accounts: JSON.parse(row.accounts) }, 200, corsHeaders);
+}
+
+/**
+ * POST /admin/instagram/confirm-account
+ * 선택된 계정으로 연동을 완료합니다.
+ */
+export async function handleConfirmAccount(
+  request: Request,
+  env: Env,
+  corsHeaders: Record<string, string>
+): Promise<Response> {
+  const authError = await requireAdminAuth(request, corsHeaders);
+  if (authError) return authError;
+
+  const body = await request.json() as { sessionId?: string; pageId?: string };
+  if (!body.sessionId || !body.pageId) {
+    return jsonResponse({ error: 'Missing sessionId or pageId' }, 400, corsHeaders);
+  }
+
+  try {
+    const igApi = new IgApiFacebookLogin(env.INSTAGRAM_APP_ID, env.INSTAGRAM_APP_SECRET);
+    await confirmOAuthAccount(body.sessionId, body.pageId, igApi, env.DB);
+    return jsonResponse({ success: true }, 200, corsHeaders);
+  } catch (err: any) {
+    if (err?.message === 'session_not_found') return jsonResponse({ error: 'Session not found or expired' }, 404, corsHeaders);
+    if (err?.message === 'invalid_account') return jsonResponse({ error: 'Invalid account selection' }, 400, corsHeaders);
+    console.error('[instagramAuth] confirm error:', err);
+    return jsonResponse({ error: 'Failed to confirm account' }, 500, corsHeaders);
   }
 }
 
