@@ -52,7 +52,7 @@ export function buildOAuthUrl(state: string, appId: string, redirectUri: string)
   const params = new URLSearchParams({
     client_id: appId,
     redirect_uri: redirectUri,
-    scope: 'instagram_basic,pages_show_list,pages_manage_metadata',
+    scope: 'instagram_basic,pages_show_list,pages_manage_metadata,instagram_manage_comments,pages_read_engagement',
     response_type: 'code',
     state,
   });
