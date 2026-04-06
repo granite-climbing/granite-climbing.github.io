@@ -501,20 +501,20 @@ export async function refreshVideoMeta(
   igApi: IgApiFacebookLogin
 ): Promise<{ instagramUsername: string | null; thumbnailUrl: string | null }> {
   const row = await db.prepare(
-    'SELECT id, video_url, platform FROM beta_videos WHERE id = ?'
-  ).bind(id).first() as { id: number; video_url: string; platform: string } | null;
+    'SELECT id, video_url, platform, thumbnail_url, instagram_username FROM beta_videos WHERE id = ?'
+  ).bind(id).first() as { id: number; video_url: string; platform: string; thumbnail_url: string | null; instagram_username: string | null } | null;
 
   if (!row) throw new Error('not_found');
 
-  let instagramUsername: string | null = null;
-  let thumbnailUrl: string | null = null;
+  let instagramUsername: string | null = row.instagram_username;
+  let thumbnailUrl: string | null = row.thumbnail_url;
 
   if (row.platform === 'instagram') {
     const meta = await igApi.getVideoMetaFromOembed(row.video_url).catch(() => null)
       ?? await getVideoMetaFromHTML(row.video_url);
     if (meta) {
-      instagramUsername = meta.author_name ?? null;
-      thumbnailUrl = meta.thumbnail_url ?? null;
+      instagramUsername = meta.author_name ?? instagramUsername;
+      if (!thumbnailUrl) thumbnailUrl = meta.thumbnail_url ?? null;
     }
   }
 
