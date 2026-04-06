@@ -379,10 +379,9 @@ export class IgApiFacebookLogin {
    * @see https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-media/comments
    */
   async replyToMedia(mediaId: string, message: string, accessToken: string): Promise<boolean> {
-    const res = await fetch(`${this.base}/${mediaId}/comments`, {
+    const params = new URLSearchParams({ message, access_token: accessToken });
+    const res = await fetch(`${this.base}/${mediaId}/comments?${params}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ message, access_token: accessToken }).toString(),
     });
     if (!res.ok) {
       const errText = await res.text();
@@ -402,10 +401,9 @@ export class IgApiFacebookLogin {
    * @see https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-comment/replies
    */
   async replyToComment(commentId: string, message: string, accessToken: string): Promise<boolean> {
-    const res = await fetch(`${this.base}/${commentId}/replies`, {
+    const params = new URLSearchParams({ message, access_token: accessToken });
+    const res = await fetch(`${this.base}/${commentId}/replies?${params}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ message, access_token: accessToken }).toString(),
     });
     if (!res.ok) {
       const errText = await res.text();
