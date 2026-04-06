@@ -289,6 +289,8 @@ export async function addVideoFromMediaMention(
     mediaId: media.id ?? mediaId,
     thumbnailUrl: media.thumbnail_url ?? media.media_url ?? null,
     username: media.username ?? null,
+    replyTarget: { type: 'media', id: media.id ?? mediaId },
+    accessToken,
   });
 }
 
@@ -324,6 +326,8 @@ export async function addVideoFromCommentMention(
     mediaId: resolvedMediaId,
     thumbnailUrl: comment.media?.thumbnail_url ?? comment.media?.media_url ?? null,
     username: comment.media?.username ?? null,
+    replyTarget: { type: 'comment', id: commentId },
+    accessToken,
   });
 }
 
@@ -339,6 +343,8 @@ async function _registerFromCaption(
     mediaId: string;
     thumbnailUrl: string | null;
     username: string | null;
+    replyTarget: { type: 'media' | 'comment'; id: string };
+    accessToken: string;
   }
 ): Promise<void> {
   if (!ctx.caption) {
@@ -394,6 +400,18 @@ async function _registerFromCaption(
   ).run();
 
   console.log('[betaVideoService] registered via mention: slug=%s username=%s permalink=%s', problemSlug, instagramUsername, ctx.permalink);
+
+  // 등록 성공 시 댓글/답글로 알림 (non-fatal)
+  const replyMessage = '🔥';
+  if (ctx.replyTarget.type === 'comment') {
+    await igApi.replyToComment(ctx.replyTarget.id, replyMessage, ctx.accessToken).catch((err) => {
+      console.error('[betaVideoService] replyToComment failed:', err);
+    });
+  } else {
+    await igApi.replyToMedia(ctx.replyTarget.id, replyMessage, ctx.accessToken).catch((err) => {
+      console.error('[betaVideoService] replyToMedia failed:', err);
+    });
+  }
 }
 
 // ─────────────────────────────────────────────
