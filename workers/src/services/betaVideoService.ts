@@ -326,7 +326,7 @@ export async function addVideoFromCommentMention(
     mediaId: resolvedMediaId,
     thumbnailUrl: comment.media?.thumbnail_url ?? comment.media?.media_url ?? null,
     username: comment.media?.username ?? null,
-    replyTarget: { type: 'comment', id: commentId },
+    replyTarget: { type: 'comment', id: comment.id ?? commentId },
     accessToken,
   });
 }
