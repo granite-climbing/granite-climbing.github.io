@@ -367,54 +367,6 @@ export class IgApiFacebookLogin {
   }
 
   // ─────────────────────────────────────────────
-  // 댓글 작성
-  // ─────────────────────────────────────────────
-
-  /**
-   * Instagram 미디어에 댓글을 답니다.
-   *
-   * @param mediaId     - Instagram 미디어 ID
-   * @param message     - 댓글 내용
-   * @param accessToken - 유저 액세스 토큰 (Business Account 필요)
-   * @see https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-media/comments
-   */
-  async replyToMedia(mediaId: string, message: string, accessToken: string): Promise<boolean> {
-    const params = new URLSearchParams({ message, access_token: accessToken });
-    const res = await fetch(`${this.base}/${mediaId}/comments?${params}`, {
-      method: 'POST',
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error(`[IgApiFacebookLogin] 미디어 댓글 실패 — mediaId=${mediaId} status=${res.status} body=${errText}`);
-      return false;
-    }
-    console.log(`[IgApiFacebookLogin] 미디어 댓글 성공 — mediaId=${mediaId}`);
-    return true;
-  }
-
-  /**
-   * Instagram 댓글에 답글을 답니다.
-   *
-   * @param commentId   - Instagram 댓글 ID
-   * @param message     - 답글 내용
-   * @param accessToken - 유저 액세스 토큰 (Business Account 필요)
-   * @see https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-comment/replies
-   */
-  async replyToComment(commentId: string, message: string, accessToken: string): Promise<boolean> {
-    const params = new URLSearchParams({ message, access_token: accessToken });
-    const res = await fetch(`${this.base}/${commentId}/replies?${params}`, {
-      method: 'POST',
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error(`[IgApiFacebookLogin] 댓글 답글 실패 — commentId=${commentId} status=${res.status} body=${errText}`);
-      return false;
-    }
-    console.log(`[IgApiFacebookLogin] 댓글 답글 성공 — commentId=${commentId}`);
-    return true;
-  }
-
-  // ─────────────────────────────────────────────
   // Webhook — 멘션 처리
   // ─────────────────────────────────────────────
 
