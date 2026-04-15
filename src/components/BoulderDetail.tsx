@@ -178,7 +178,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
     if (!selectedProblem || !selectedTopo) return;
 
     const gradeLabel = selectedProblem.grade;
-    const caption = `"${selectedProblem.title}" ${gradeLabel} on ${selectedTopo.title}, ${boulder.title}, ${cragTitle}. @granite_climbing #granite_climbing #climbing #bouldering`;
+    const caption = `"${selectedProblem.title}" ${gradeLabel} on ${selectedTopo.title}, ${boulder.title}, ${cragTitle}. @granite.kr #granite_climbing #climbing #bouldering`;
 
     navigator.clipboard.writeText(caption);
     setCopiedHashtag(true);
@@ -399,7 +399,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
                 <div className={styles.captionLabel}>캡션</div>
                 <div className={styles.captionText}>
                   &quot;{selectedProblem.title}&quot; {selectedProblem.grade} on {selectedTopo.title}, {boulder.title},{' '}
-                  {cragTitle}. @granite_climbing #granite_climbing #climbing #bouldering
+                  {cragTitle}. @granite.kr #granite_climbing #climbing #bouldering
                 </div>
               </div>
 
