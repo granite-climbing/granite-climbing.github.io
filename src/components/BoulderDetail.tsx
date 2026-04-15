@@ -219,7 +219,7 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
         },
         body: JSON.stringify({
           problemSlug: selectedProblem.slug,
-          instagramUrl: instagramLink.trim(),
+          videoUrl: instagramLink.trim(),
         }),
       });
 
@@ -392,11 +392,9 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
             </div>
             <div className={styles.sheetBody}>
               <p className={styles.sheetDescription}>
-                현재 루트 이상이 인식되면 인스타그램 게시물 개시를 권합니다. 자세한 문구
-                구 안내 문구
+                아래 캡션을 복사해 인스타그램에 게시한 뒤, 영상 링크를 여기에 등록해 주세요.
               </p>
 
-              {/* 캡션 복사 버튼 임시 비활성화
               <div className={styles.captionBox}>
                 <div className={styles.captionLabel}>캡션</div>
                 <div className={styles.captionText}>
@@ -406,9 +404,8 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
               </div>
 
               <button className={styles.sheetCta} onClick={handleCopyCaption}>
-                {copiedHashtag ? '✓ 현재 복사됨 → Instagram 열기' : '현재 복사하고 → Instagram 열기'}
+                {copiedHashtag ? '✓ 캡션 복사됨 → Instagram 열기' : '캡션 복사하고 → Instagram 열기'}
               </button>
-              */}
 
               <button className={styles.sheetCtaSecondary} onClick={handleOpenUploadModal}>
                 베타 영상 올리기
@@ -521,11 +518,11 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
             </div>
             <div className={styles.uploadModalBody}>
               <p className={styles.uploadModalDescription}>
-                Instagram 링크를 입력해주세요
+                인스타그램에 게시한 영상 링크를 입력해주세요.
               </p>
               <input
                 type="text"
-                placeholder="https://www.instagram.com/p/..."
+                placeholder="https://www.instagram.com/reel/..."
                 value={instagramLink}
                 onChange={(e) => setInstagramLink(e.target.value)}
                 className={styles.uploadModalInput}
