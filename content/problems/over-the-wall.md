@@ -6,5 +6,5 @@ grade: V3
 index: 2
 hashtag: "#수락산볼더링"
 fa: "@climb_626"
-image: /images/수락산_담장볼더_1_담장너머로-80.jpg
+image: /images/수락산_담장볼더_1_담장너머로-80.jpg
 ---

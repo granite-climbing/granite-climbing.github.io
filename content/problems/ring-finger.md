@@ -5,5 +5,5 @@ title: Ring Finger
 grade: V5
 hashtag: "#양양_Ring_Finger"
 fa: "@hyunwoo_seoul"
-image: /images/강원도_양양_건틀렛_1_ring-finger.jpg
+image: /images/강원도_양양_건틀렛_1_ring-finger.jpg
 ---

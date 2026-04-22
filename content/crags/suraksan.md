@@ -1,7 +1,7 @@
 ---
 slug: suraksan
 title: 수락산
-thumbnail: /images/물개바위_1.jpg
+thumbnail: /images/물개바위_1.jpg
 difficultyMin: V2
 difficultyMax: V9
 address: 서울 노원구 동일로250길 44-142
