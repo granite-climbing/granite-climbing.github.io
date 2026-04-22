@@ -6,5 +6,5 @@ grade: V2
 index: 1
 hashtag: "#수락산_네모의_꿈"
 fa: "@climb_626"
-image: /images/수락산_네모의꿈_1_네모의꿈.png
+image: /images/수락산_네모의꿈_1_네모의꿈.jpg
 ---
