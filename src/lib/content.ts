@@ -330,6 +330,8 @@ export function getBouldersByCrag(cragSlug: string) {
       thumbnail: boulder.thumbnail,
       description: boulder.description,
       problemCount,
+      latitude: boulder.latitude,
+      longitude: boulder.longitude,
     };
   });
 }

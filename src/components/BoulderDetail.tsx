@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import MapProviderLinks from './MapProviderLinks';
 import styles from './BoulderDetail.module.css';
 
 interface Boulder {
@@ -289,17 +290,17 @@ export default function BoulderDetail({ cragSlug, cragTitle, boulder, toposWithP
           className={styles.topoImage}
         />
         {boulder.latitude && boulder.longitude && (
-          <a
+          <MapProviderLinks
             className={styles.topoMapButton}
-            href={`https://map.kakao.com/link/map/${encodeURIComponent(boulder.title)},${boulder.latitude},${boulder.longitude}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="카카오맵에서 위치 보기"
+            label={boulder.title}
+            latitude={boulder.latitude}
+            longitude={boulder.longitude}
+            ariaLabel="지도 열기"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>
             </svg>
-          </a>
+          </MapProviderLinks>
         )}
       </div>
 

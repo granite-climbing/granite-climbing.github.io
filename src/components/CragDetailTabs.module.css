@@ -170,11 +170,13 @@
   padding: 10px 20px;
   border: 1px solid #ddd;
   border-radius: 24px;
+  font-family: inherit;
   font-size: 0.85rem;
   font-weight: 500;
   color: #333;
   text-decoration: none;
   background: #fff;
+  cursor: pointer;
   transition: all 0.2s;
 }
 

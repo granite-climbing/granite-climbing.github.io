@@ -2,6 +2,7 @@
 
 import Script from 'next/script';
 import { useEffect, useRef, useState } from 'react';
+import MapProviderLinks from './MapProviderLinks';
 import styles from './CragDetailTabs.module.css';
 
 interface Crag {
@@ -228,30 +229,32 @@ function InfoTab({ crag }: { crag: Crag }) {
 
       <div className={styles.buttons}>
         {crag.parkingLatitude && crag.parkingLongitude && (
-          <a
+          <MapProviderLinks
             className={styles.button}
-            href={`https://map.kakao.com/link/map/${encodeURIComponent(`${crag.title} 주차장`)},${crag.parkingLatitude},${crag.parkingLongitude}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            label={`${crag.title} 주차장`}
+            latitude={crag.parkingLatitude}
+            longitude={crag.parkingLongitude}
+            ariaLabel="Parking Spot 지도 열기"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M13 3H6v18h4v-6h3c3.31 0 6-2.69 6-6s-2.69-6-6-6zm.2 8H10V7h3.2c1.1 0 2 .9 2 2s-.9 2-2 2z"/>
             </svg>
             Parking Spot
-          </a>
+          </MapProviderLinks>
         )}
         {crag.cafeLatitude && crag.cafeLongitude && (
-          <a
+          <MapProviderLinks
             className={styles.button}
-            href={`https://map.kakao.com/link/map/${encodeURIComponent(`${crag.title} 카페`)},${crag.cafeLatitude},${crag.cafeLongitude}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            label={`${crag.title} 카페`}
+            latitude={crag.cafeLatitude}
+            longitude={crag.cafeLongitude}
+            ariaLabel="Cafe 지도 열기"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M18.5 3H6c-1.1 0-2 .9-2 2v5.71c0 3.83 2.95 7.18 6.78 7.29 3.96.12 7.22-3.06 7.22-7V8h1.5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 3h-1.5V5h1.5v1zM4 19h16v2H4z"/>
             </svg>
             Cafe
-          </a>
+          </MapProviderLinks>
         )}
       </div>
     </div>
@@ -283,18 +286,18 @@ function BoulderTab({ crag, boulders, onBoulderClick }: { crag: Crag; boulders: 
                 <div className={styles.boulderImagePlaceholder} />
               )}
               {boulder.latitude && boulder.longitude && (
-                <a
+                <MapProviderLinks
                   className={styles.boulderMapButton}
-                  href={`https://map.kakao.com/link/map/${encodeURIComponent(boulder.title)},${boulder.latitude},${boulder.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="카카오맵에서 위치 보기"
+                  label={boulder.title}
+                  latitude={boulder.latitude}
+                  longitude={boulder.longitude}
+                  ariaLabel="지도 열기"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor"/>
                   </svg>
-                </a>
+                </MapProviderLinks>
               )}
             </div>
             <div className={styles.boulderInfo}>
