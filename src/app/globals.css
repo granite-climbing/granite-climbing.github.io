@@ -24,11 +24,17 @@ body {
   width: 100%;
   max-width: var(--app-max-width);
   min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+    sans-serif;
   background: var(--background);
   color: var(--primary-color);
   line-height: 1.6;
   overflow-x: clip;
+}
+
+body.app-nav-visible {
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
 
 /* 모바일에서는 풀 화면 */
@@ -91,7 +97,9 @@ main {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .card:active {
